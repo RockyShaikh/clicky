@@ -1,0 +1,14 @@
+{
+  "request_id": "r_fixture0004",
+  "say": "Two steps.",
+  "screen_index": 1,
+  "image_width_px": 1280,
+  "image_height_px": 831,
+  "shapes": [],
+  "steps": [
+    { "say": "Click File.", "shapes": [ { "kind": "box", "x": 40, "y": 8, "x2": 80, "y2": 28, "emphasis": "primary", "snap": true } ], "expect_click": true },
+    { "say": "Then Export.", "shapes": [ { "kind": "arrow", "x": 120, "y": 200, "from_x": 300, "from_y": 260, "emphasis": "primary" } ], "expect_click": true }
+  ],
+  "expect_click": true,
+  "final": false
+}

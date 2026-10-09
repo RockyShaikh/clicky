@@ -1,7 +1,7 @@
 # Contracts (v1.1)
 
 Every workstream codes against this file. Change it only on `main`, bump the version line, and tell the other agents.
-**Contract version: 1.1 (2026-10-08)** — 1.1 corrects §6-§8 against the existing code (see "Existing code facts" in §6).
+**Contract version: 1.2 (2026-10-08)** — 1.1 corrects §6-§8 against the existing code (see "Existing code facts" in §6). 1.2 adds §9 latency logging and the eval `look` path rule.
 
 ## 1. Runtime paths
 
@@ -205,3 +205,16 @@ Matches the existing logic in `CompanionManager` (clamp, scale to display points
 
 image px (top-left) → clamp → × (displayFrame.width / imageWidth, displayFrame.height / imageHeight) → flip Y (`displayHeight − y`) → + displayFrame.origin → AppKit global points.
 Unit-test example from upstream: (1100, 42) in 1280×831 on a 1512×982 display at origin (0,0) → (1299.4, 932.4).
+
+## 9. Latency logging and evals (WS6 consumes, everyone emits)
+
+The app and bridge write latency lines to `~/.clicky/logs/<component>-YYYY-MM-DD.log` (`component` = `app` or `bridge`), one per event:
+
+```
+<ISO8601 UTC with milliseconds> latency request_id=<r_…> event=<name> [key=value …]
+```
+
+Events, and who emits each: `wake`, `capture_done` (`screens=N`), `dim_shown` (WS1), `speech_end` (`path=flow|apple`) (WS2), `submit`, `first_event`, `respond` (WS3, app side), `tts_start` (lead/coordinator). `request_id` is minted at `wake` and carried through every later event. Full spec and budgets: `docs/fork/TESTING.md`.
+
+The grounding eval (`scripts/eval-grounding.mjs`) sends `image_path`s under `test-fixtures/screens/`. The bridge must accept image paths under `~/.clicky/shots/` **and** under the repo's `test-fixtures/` directory, or an explicit `CLICKY_EXTRA_IMAGE_DIRS` (colon-separated) env override. All other paths are refused.
+

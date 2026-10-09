@@ -1,0 +1,14 @@
+{
+  "request_id": "r_fixture0005",
+  "say": "Bad shapes are skipped, good ones survive; first primary wins.",
+  "screen_index": 1,
+  "image_width_px": 1280,
+  "image_height_px": 831,
+  "shapes": [
+    { "kind": "circle", "x": 100, "y": 100 },
+    { "kind": "box", "x": 10, "y": 10, "x2": 100, "y2": 60, "emphasis": "primary" },
+    { "kind": "circle", "x": 500, "y": 500, "r": 20, "emphasis": "primary" },
+    { "kind": "path", "points": [[1,1]] }
+  ],
+  "final": true
+}
