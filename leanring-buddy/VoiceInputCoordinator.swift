@@ -29,6 +29,8 @@ enum VoiceInputError: LocalizedError {
 enum VoiceTranscriptionPath: String {
     case wisprFlow
     case appleSpeechFallback
+    /// The user typed the text and pressed Return in the panel.
+    case typed
 }
 
 /// Decides when text in the panel field has "settled": non-empty and unchanged for `requiredStableSeconds`.
@@ -76,6 +78,8 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
 
     private var isCaptureInProgress = false
     private var wasCancelled = false
+    private var userIsTyping = false
+    private var typedSubmissionText: String?
     private var earlyEndOfSpeechOutcome: EndOfSpeechOutcome?
     private var endOfSpeechContinuation: CheckedContinuation<EndOfSpeechOutcome?, Never>?
 
@@ -97,6 +101,9 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
         endOfSpeechDetector.onLevelUpdate = { [weak self] level in
             self?.voiceInputPanel.updateLevel(level)
         }
+        voiceInputPanel.onKeyAction = { [weak self] keyAction in
+            self?.handleKeyAction(keyAction)
+        }
     }
 
     func captureUtterance(onScreen capturedScreen: CapturedScreenForRequest?) async throws -> String {
@@ -104,6 +111,8 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
         isCaptureInProgress = true
         wasCancelled = false
         earlyEndOfSpeechOutcome = nil
+        userIsTyping = false
+        typedSubmissionText = nil
         lastTranscriptionPath = nil
         lastSpeechEndToSubmitLatencySeconds = nil
 
@@ -140,6 +149,9 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
             await wisprFlowDriver.stopDictation()
         }
         if wasCancelled { throw VoiceInputError.cancelled }
+        if let typedSubmissionText {
+            return finishCapture(text: typedSubmissionText, path: .typed, speechEndedTime: speechEndedTime)
+        }
         if outcome == .noSpeechHeard {
             throw VoiceInputError.noSpeechRecognized
         }
@@ -171,6 +183,27 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
         // The capture itself sends Flow's stop trigger once its wait resumes, so we must not send a second one here.
     }
 
+    // MARK: - Typing
+
+    private func handleKeyAction(_ keyAction: SummonPanelKeyAction) {
+        guard isCaptureInProgress else { return }
+        switch keyAction {
+        case .userIsTyping:
+            guard !userIsTyping else { return }
+            // Typing is slower than speech: stop the silence/no-speech timers so they cannot end the
+            // capture mid-sentence. Return (or Esc) now ends it.
+            userIsTyping = true
+            endOfSpeechDetector.stop()
+            voiceInputPanel.updateHint("Press Return to send, Esc to cancel")
+        case .submitTypedText:
+            guard let submission = TypedPromptText.normalizedSubmission(from: voiceInputPanel.currentText) else { return }
+            typedSubmissionText = submission
+            resumeEndOfSpeechWaiter(with: .endOfSpeech)
+        case .ignore:
+            break
+        }
+    }
+
     // MARK: - Steps
 
     private func finishCapture(text: String, path: VoiceTranscriptionPath, speechEndedTime: Date) -> String {
@@ -182,10 +215,18 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
             ClickyLatencyLog.record(
                 requestID: requestID,
                 event: "speech_end",
-                extraFields: ["path": path == .wisprFlow ? "flow" : "apple"]
+                extraFields: ["path": Self.latencyPathLabel(for: path)]
             )
         }
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func latencyPathLabel(for path: VoiceTranscriptionPath) -> String {
+        switch path {
+        case .wisprFlow: return "flow"
+        case .appleSpeechFallback: return "apple"
+        case .typed: return "typed"
+        }
     }
 
     private func waitForEndOfSpeech() async -> EndOfSpeechOutcome? {

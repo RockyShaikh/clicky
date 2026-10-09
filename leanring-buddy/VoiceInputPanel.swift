@@ -37,6 +37,10 @@ private final class VoiceLevelMeterView: NSView {
 final class VoiceInputPanel: NSObject, NSTextFieldDelegate {
     /// Called every time the field's text changes (typed by Wispr Flow or by the user).
     var onTextChanged: ((String) -> Void)?
+    /// A real key press inside the field. Return is `.submitTypedText`; other keys are `.userIsTyping`.
+    /// Flow's paste is a Command+V, which the classifier ignores, so only the user's own typing arrives here.
+    var onKeyAction: ((SummonPanelKeyAction) -> Void)?
+    private var keyEventMonitor: Any?
 
     private let panel: KeyCapableNonActivatingPanel
     private let textField = NSTextField()
@@ -83,6 +87,38 @@ final class VoiceInputPanel: NSObject, NSTextFieldDelegate {
         }
         panel.makeKeyAndOrderFront(nil)
         panel.makeFirstResponder(textField)
+        installKeyEventMonitor()
+    }
+
+    /// A local monitor sees key presses addressed to our panel before the field handles them.
+    /// Return is consumed here so it never reaches the field (a one-line field would just beep).
+    private func installKeyEventMonitor() {
+        removeKeyEventMonitor()
+        keyEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] keyDownEvent in
+            guard let self, keyDownEvent.window === self.panel else { return keyDownEvent }
+            let heldModifiers = keyDownEvent.modifierFlags.intersection([.command, .control, .option])
+            let keyAction = SummonPanelKeyClassifier.classify(
+                keyCode: keyDownEvent.keyCode,
+                hasCommandControlOrOptionModifier: !heldModifiers.isEmpty
+            )
+            switch keyAction {
+            case .submitTypedText:
+                self.onKeyAction?(.submitTypedText)
+                return nil
+            case .userIsTyping:
+                self.onKeyAction?(.userIsTyping)
+                return keyDownEvent
+            case .ignore:
+                return keyDownEvent
+            }
+        }
+    }
+
+    private func removeKeyEventMonitor() {
+        if let keyEventMonitor {
+            NSEvent.removeMonitor(keyEventMonitor)
+        }
+        keyEventMonitor = nil
     }
 
     func updateHint(_ hint: String) {
@@ -94,6 +130,7 @@ final class VoiceInputPanel: NSObject, NSTextFieldDelegate {
     }
 
     func hide() {
+        removeKeyEventMonitor()
         panel.orderOut(nil)
     }
 
