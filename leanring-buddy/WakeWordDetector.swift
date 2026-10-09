@@ -47,10 +47,10 @@ enum WakeWordPhraseMatcher {
         "clicky", "clickey", "clicky's", "clickie", "cliqui", "klicky", "clikey",
     ]
     private static let looseOnlyClickyVariants: Set<String> = [
-        "clicki", "cliquey", "clickee", "clikki", "glicky", "clickly", "kliki", "clicky.", "clique", "click",
+        "clicki", "cliquey", "clickee", "clikki", "glicky", "clickly", "kliki", "clique",
     ]
     private static let normalGreetingWords: Set<String> = ["hey", "hi", "hay", "a", "hei"]
-    private static let looseOnlyGreetingWords: Set<String> = ["hello", "ok", "okay", "yo", "hey,", "hay,", "eh", "he"]
+    private static let looseOnlyGreetingWords: Set<String> = ["hello", "ok", "okay", "yo", "eh"]
 
     /// True when the text contains a greeting word immediately followed by a "clicky" variant.
     /// Requiring the greeting keeps plain talk about "click" or "clicky" from triggering.
