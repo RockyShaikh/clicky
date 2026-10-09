@@ -70,12 +70,16 @@ final class CaptureDimLayerState: ObservableObject {
     /// Call ONLY after the capture finished writing. Flips the dim visible and starts listening for Esc.
     func presentDimAfterCaptureCompleted(
         onScreenWithFrame screenFrame: CGRect,
-        cursorLocation: CGPoint = NSEvent.mouseLocation
+        cursorLocation: CGPoint = NSEvent.mouseLocation,
+        requestID: String? = nil
     ) {
         dimmedScreenFrameInAppKitGlobalPoints = screenFrame
         cursorLocationInAppKitGlobalPoints = cursorLocation
         phase = .looking
         SummonLatencySignposter.event("dim_visible")
+        if let requestID = requestID ?? ClickyLatencyLog.latestWakeRequestID {
+            ClickyLatencyLog.record(requestID: requestID, event: "dim_shown")
+        }
 
         // Esc is only observed while summoned and the tap is torn down on dismiss: never a global hotkey.
         escapeKeyMonitor.start { [weak self] in self?.requestCancel() }

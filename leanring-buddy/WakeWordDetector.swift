@@ -152,6 +152,7 @@ final class WakeWordDetector: NSObject, SummonTriggerProvider {
         lastTriggerDate = Date()
         hasTriggeredInCurrentSession = true
         SummonLatencySignposter.event("summon_trigger", detail: "wakeWord")
+        ClickyLatencyLog.recordWake(triggerDescription: "wakeWord")
         onWakeWordDiagnosticLog?("trigger: \(recognizedText)")
         summonTriggerContinuation.yield(.wakeWord)
         // Restart so the same utterance's later partials (and the user's request) don't re-trigger.

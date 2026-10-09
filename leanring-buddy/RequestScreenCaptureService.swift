@@ -93,7 +93,7 @@ enum ShotFileRotation {
     }
 }
 
-enum CompanionRequestIdentifier {
+nonisolated enum CompanionRequestIdentifier {
     private static let base32Alphabet = Array("abcdefghijklmnopqrstuvwxyz234567")
 
     /// "r_" + 10 lowercase base32 characters (CONTRACTS section 1).
@@ -234,6 +234,7 @@ final class RequestScreenCaptureService: ScreenCaptureForRequestProvider {
         let elapsedNanoseconds = DispatchTime.now().uptimeNanoseconds - captureStartTime.uptimeNanoseconds
         lastCaptureDurationInMilliseconds = Double(elapsedNanoseconds) / 1_000_000
         SummonLatencySignposter.event("capture_done", detail: "\(requestID) \(Int(lastCaptureDurationInMilliseconds)) ms")
+        ClickyLatencyLog.record(requestID: requestID, event: "capture_done", extraFields: ["screens": String(capturedScreens.count)])
 
         return capturedScreens
     }
