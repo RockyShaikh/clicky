@@ -71,12 +71,21 @@ final class ClaudeCodeHeadlessTransport: BrainTransport, @unchecked Sendable {
     // MARK: BrainTransport
 
     func checkAvailability() async -> Bool {
-        Self.locateClaudeExecutable() != nil
+        guard Self.locateClaudeExecutable() != nil else { return false }
+        // Never fall back to the default (possibly Team) login.
+        if let unavailableReason = ClickyClaudeConfiguration.loginState().unavailableReason {
+            print("Headless unavailable: \(unavailableReason)")
+            return false
+        }
+        return true
     }
 
     func sendRequest(_ request: CompanionRequest) async throws {
         guard let claudeExecutableURL = Self.locateClaudeExecutable() else {
             throw BrainTransportError.notAvailable("claude executable not found")
+        }
+        if let unavailableReason = ClickyClaudeConfiguration.loginState().unavailableReason {
+            throw BrainTransportError.notAvailable(unavailableReason)
         }
         ClickyLatencyLog.record(requestID: request.requestID, event: "submit", extraFields: ["transport": "headless"])
         // Fire and forget: results arrive on companionEvents, like the channel transport.
@@ -191,10 +200,8 @@ final class ClaudeCodeHeadlessTransport: BrainTransport, @unchecked Sendable {
         if let sessionIDToResume { arguments += ["--resume", sessionIDToResume] }
         process.arguments = arguments
 
-        // Never pass the API key through: it would switch billing from the subscription to the API.
-        var childEnvironment = ProcessInfo.processInfo.environment
-        childEnvironment.removeValue(forKey: "ANTHROPIC_API_KEY")
-        process.environment = childEnvironment
+        // Personal Pro login via CLAUDE_CONFIG_DIR, and no API key (it would bill the API).
+        process.environment = ClickyClaudeConfiguration.childProcessEnvironment()
 
         let standardOutputPipe = Pipe()
         process.standardOutput = standardOutputPipe

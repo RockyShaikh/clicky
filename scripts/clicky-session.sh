@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # Manage the persistent Claude Code session that backs Clicky.
-# Usage: clicky-session.sh start | attach | stop | status
+# Usage: clicky-session.sh login | start | attach | stop | status
 set -euo pipefail
 
 # Billing/auth rule: an API key would bill the API instead of the subscription login.
 unset ANTHROPIC_API_KEY
+
+# Account rule: Clicky only ever uses a personal login kept in its own config dir, never the
+# default ~/.claude login (that may be a Team org, which blocks channels and must get no Clicky traffic).
+CLAUDE_CONFIG_DIR="${CLICKY_CLAUDE_CONFIG_DIR:-$HOME/.claude-personal}"
+export CLAUDE_CONFIG_DIR
 
 SESSION_NAME="clicky"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,6 +24,16 @@ require_command() {
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "error: '$command_name' not found. $hint" >&2
     exit 1
+  fi
+}
+
+# Looks logged in if the config dir has credentials or an oauthAccount entry. Never prints secrets.
+config_dir_login_state() {
+  if [ ! -d "$CLAUDE_CONFIG_DIR" ]; then echo "missing"; return; fi
+  if [ -f "$CLAUDE_CONFIG_DIR/.credentials.json" ] || { [ -f "$CLAUDE_CONFIG_DIR/.claude.json" ] && grep -q '"oauthAccount"' "$CLAUDE_CONFIG_DIR/.claude.json"; }; then
+    echo "logged-in"
+  else
+    echo "not-logged-in"
   fi
 }
 
@@ -59,8 +74,22 @@ sync_template() {
   done < <(cd "$TEMPLATE_DIR" && find . -type f | sed 's|^\./||')
 }
 
+cmd_login() {
+  require_command claude "Install Claude Code: https://code.claude.com"
+  mkdir -p "$CLAUDE_CONFIG_DIR"
+  echo "Opening claude with config dir $CLAUDE_CONFIG_DIR."
+  echo "Run /login and choose your personal Pro account (not the Team/org one), then /exit."
+  cd "$HOME"
+  exec claude
+}
+
 cmd_start() {
   require_command claude "Install Claude Code: https://code.claude.com"
+  if [ "$(config_dir_login_state)" != "logged-in" ]; then
+    echo "error: no personal Claude login found in $CLAUDE_CONFIG_DIR." >&2
+    echo "Run '$0 login' first and /login with your personal Pro account." >&2
+    exit 1
+  fi
   require_command node "Install Node 18+: brew install node"
   require_command tmux "Install tmux: brew install tmux"
   if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
@@ -69,14 +98,15 @@ cmd_start() {
   fi
   build_bridge_if_stale
   sync_template
+  # A running tmux server does not inherit this shell's env, so set the vars inside the command.
   tmux new-session -d -s "$SESSION_NAME" -c "$WORKSPACE_DIR" \
-    "claude --dangerously-load-development-channels server:clicky --chrome --model sonnet"
+    "unset ANTHROPIC_API_KEY; export CLAUDE_CONFIG_DIR='$CLAUDE_CONFIG_DIR'; claude --dangerously-load-development-channels server:clicky --chrome --model sonnet"
   cat <<EOF
 started tmux session '$SESSION_NAME'.
 Run '$0 attach' once to:
   1. accept the development-channels warning dialog,
   2. approve the 'clicky' server from .mcp.json (first run only),
-  3. /login if prompted (use /login, not an API key, so Chrome works).
+  3. confirm the account shown is your personal Pro login (config dir: $CLAUDE_CONFIG_DIR).
 Detach with ctrl-b d. Then check: $0 status
 EOF
 }
@@ -93,6 +123,7 @@ cmd_stop() {
 
 cmd_status() {
   require_command tmux "Install tmux: brew install tmux"
+  echo "claude config dir: $CLAUDE_CONFIG_DIR ($(config_dir_login_state))"
   local pane=""
   if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     echo "tmux: session '$SESSION_NAME' alive"
@@ -124,9 +155,10 @@ cmd_status() {
 }
 
 case "${1:-}" in
+  login) cmd_login ;;
   start) cmd_start ;;
   attach) cmd_attach ;;
   stop) cmd_stop ;;
   status) cmd_status ;;
-  *) echo "usage: $0 start|attach|stop|status" >&2; exit 2 ;;
+  *) echo "usage: $0 login|start|attach|stop|status" >&2; exit 2 ;;
 esac
