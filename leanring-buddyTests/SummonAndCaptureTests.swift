@@ -89,6 +89,34 @@ struct SummonAndCaptureTests {
         #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "clicky"))
     }
 
+    @Test func wakeWordSensitivityLevelsMapFromSlider() {
+        #expect(WakeWordSensitivityLevel(sliderValue: 0.0) == .strict)
+        #expect(WakeWordSensitivityLevel(sliderValue: 0.5) == .normal)
+        #expect(WakeWordSensitivityLevel(sliderValue: 0.9) == .loose)
+    }
+
+    @Test func strictWakeWordAcceptsOnlyExactPhrase() {
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "Hey Clicky", sensitivity: .strict))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "hi clicky", sensitivity: .strict))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "hey clickey", sensitivity: .strict))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "hey click e", sensitivity: .strict))
+    }
+
+    @Test func normalWakeWordKeepsExistingVariantsAndRejectsLooseOnes() {
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "hi clickey", sensitivity: .normal))
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "hey click e", sensitivity: .normal))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "okay clicky", sensitivity: .normal))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "hey cliquey", sensitivity: .normal))
+    }
+
+    @Test func looseWakeWordAddsGreetingsAndSoundAlikesButStillNeedsGreeting() {
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "okay clicky", sensitivity: .loose))
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "hey cliquey", sensitivity: .loose))
+        #expect(WakeWordPhraseMatcher.containsWakePhrase(in: "hey clickey", sensitivity: .loose))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "clicky", sensitivity: .loose))
+        #expect(!WakeWordPhraseMatcher.containsWakePhrase(in: "the clicky keyboard", sensitivity: .loose))
+    }
+
     @Test func privacyGuardMatchesExactAndPrefixEntries() {
         let denied = PrivacyCaptureGuard.defaultDeniedBundleIdentifiers
         #expect(PrivacyCaptureGuard.isCaptureDenied(forFrontmostBundleIdentifier: "com.1password.1password", deniedBundleIdentifiers: denied))
