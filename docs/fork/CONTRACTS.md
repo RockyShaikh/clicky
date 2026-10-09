@@ -1,7 +1,7 @@
-# Contracts (v1)
+# Contracts (v1.1)
 
 Every workstream codes against this file. Change it only on `main`, bump the version line, and tell the other agents.
-**Contract version: 1.0 (2026-10-08)**
+**Contract version: 1.1 (2026-10-08)** — 1.1 corrects §6-§8 against the existing code (see "Existing code facts" in §6).
 
 ## 1. Runtime paths
 
@@ -183,14 +183,25 @@ protocol SpokenResponseOutput: AnyObject {                // WS2
 }
 ```
 
+### Existing code facts (verified against the repo)
+
+- **Capture today:** `CompanionScreenCaptureUtility` is a `@MainActor enum`; `captureAllScreensAsJPEG() async throws -> [CompanionScreenCapture]`. `CompanionScreenCapture` holds `imageData: Data` (in memory, JPEG q0.8, **no file written**), `label`, `isCursorScreen`, `displayWidthInPoints`/`displayHeightInPoints` (Int), `displayFrame` (`NSScreen.frame`, AppKit bottom-left origin), `screenshotWidthInPixels`/`screenshotHeightInPixels`. Long edge is capped at 1280 px. WS1 writes the files to `~/.clicky/shots/` and maps this struct to `CapturedScreenForRequest` (`imageFileURL`, `isCursorScreen`, etc.).
+- **Screen numbering:** displays are sorted with the **cursor screen first**; `screen_index` is 1-based in that order (so with a cursor screen, it is index 1). The capture excludes this app's own windows, so the dim/overlay never appears in screenshots; still capture before showing the dim.
+- **Legacy POINT tag:** `[POINT:x,y:label]`, `[POINT:x,y:label:screenN]` or `[POINT:none]`, anchored at the end of the reply, integer pixels in the screenshot space, `screenN` 1-based, label optional (`CompanionManager.parsePointingCoordinates`). It stays as the fallback path for the old Claude-API flow; the channel flow uses `respond` shapes instead.
+- **TTS:** `ElevenLabsTTSClient.speakText(_:) async throws` returns as soon as playback **starts** (not when it ends); also `isPlaying: Bool` and `stopPlayback()`. A `SpokenResponseOutput.speak` implementation must therefore wait for playback to finish (poll `isPlaying`) before returning, and `stopSpeaking()` maps to `stopPlayback()`.
+- **Transcription:** `BuddyTranscriptionProvider` is a push-to-talk streaming-session protocol (`startStreamingSession(keyterms:onTranscriptUpdate:onFinalTranscriptReady:onError:)` returning a `BuddyStreamingTranscriptionSession`), selected by `BuddyTranscriptionProviderFactory` from the Info.plist key `VoiceTranscriptionProvider` (`assemblyai`|`openai`|`apple`). It is not the `VoiceUtteranceProvider` in this file; WS2 may wrap `apple` as the fallback but must not change the protocol.
+- **Planned, not yet in repo:** `session-template/`, `scripts/clicky-session.sh`, `scripts/make-profile.sh` and the bridge (WS3) do not exist yet; `scripts/` currently holds only `release.sh`.
+
 ## 7. View mounting (lead only)
 
 WS1 and WS4 ship **standalone SwiftUI views + `@MainActor` observable state**; they do not edit `OverlayWindow.swift`.
 - `CaptureDimLayerView(state: CaptureDimLayerState)` — full-screen dim + pill for one screen.
 - `AnnotationLayerView(state: AnnotationLayerState)` — draws mapped shapes for one screen.
-The lead adds both to the overlay's ZStack per screen in Phase 2 (dim under annotations, annotations under the blue cursor).
+The overlay today is one `OverlayWindow` (NSPanel) per `NSScreen`, each hosting a `BlueCursorView(screenFrame: screen.frame, …)` whose top-level `ZStack` is where the lead adds both views per screen in Phase 2 (dim under annotations, annotations under the blue cursor).
 
 ## 8. Coordinate mapping (WS4 implements, everyone assumes)
+
+Matches the existing logic in `CompanionManager` (clamp, scale to display points, flip Y). `displayFrame` is `NSScreen.frame`, so the result is in the same space as `NSEvent.mouseLocation`; inside a per-screen overlay view, local y = `screenFrame.height − (globalY − screenFrame.origin.y)`.
 
 image px (top-left) → clamp → × (displayFrame.width / imageWidth, displayFrame.height / imageHeight) → flip Y (`displayHeight − y`) → + displayFrame.origin → AppKit global points.
 Unit-test example from upstream: (1100, 42) in 1280×831 on a 1512×982 display at origin (0,0) → (1299.4, 932.4).
