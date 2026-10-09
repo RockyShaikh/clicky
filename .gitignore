@@ -16,3 +16,4 @@ profile.md
 bridge/**/node_modules/
 bridge/**/dist/
 build/agent-check/
+xcuserdata/
