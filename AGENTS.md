@@ -70,10 +70,10 @@ Worker vars: `ELEVENLABS_VOICE_ID`
 | File | Lines | Purpose |
 |------|-------|---------|
 | `leanring_buddyApp.swift` | ~89 | Menu bar app entry point. Uses `@NSApplicationDelegateAdaptor` with `CompanionAppDelegate` which creates `MenuBarPanelManager` and starts `CompanionManager`. No main window — the app lives entirely in the status bar. |
-| `CompanionManager.swift` | ~1026 | Central state machine. Owns dictation, shortcut monitoring, screen capture, Claude API, ElevenLabs TTS, and overlay management. Tracks voice state (idle/listening/processing/responding), conversation history, model selection, and cursor visibility. Coordinates the full push-to-talk → screenshot → Claude → TTS → pointing pipeline. |
+| `CompanionManager.swift` | ~1140 | Central state machine. Owns dictation, shortcut monitoring, screen capture, Claude API, ElevenLabs TTS, and overlay management. Tracks voice state (idle/listening/processing/responding), conversation history, model selection, and cursor visibility. Coordinates the full push-to-talk → screenshot → Claude → TTS → pointing pipeline. Fork: owns the hands-free coordinator, wake word, Control+Option tap monitor and the shared dim/annotation states; push-to-talk only starts after the 250 ms tap threshold. |
 | `MenuBarPanelManager.swift` | ~243 | NSStatusItem + custom NSPanel lifecycle. Creates the menu bar icon, manages the floating companion panel (show/hide/position), installs click-outside-to-dismiss monitor. |
-| `CompanionPanelView.swift` | ~761 | SwiftUI panel content for the menu bar dropdown. Shows companion status, push-to-talk instructions, model picker (Sonnet/Opus), permissions UI, DM feedback button, and quit button. Dark aesthetic using `DS` design system. |
-| `OverlayWindow.swift` | ~881 | Full-screen transparent overlay hosting the blue cursor, response text, waveform, and spinner. Handles cursor animation, element pointing with bezier arcs, multi-monitor coordinate mapping, and fade-out transitions. |
+| `CompanionPanelView.swift` | ~910 | SwiftUI panel content for the menu bar dropdown. Shows companion status, push-to-talk instructions, model picker (Sonnet/Opus), permissions UI, DM feedback button, and quit button. Dark aesthetic using `DS` design system. Fork: hands-free settings (brain, voice input, wake word, dim, capture all screens). |
+| `OverlayWindow.swift` | ~900 | Full-screen transparent overlay hosting the blue cursor, response text, waveform, and spinner. Handles cursor animation, element pointing with bezier arcs, multi-monitor coordinate mapping, and fade-out transitions. |
 | `CompanionResponseOverlay.swift` | ~217 | SwiftUI view for the response text bubble and waveform displayed next to the cursor in the overlay. |
 | `CompanionScreenCaptureUtility.swift` | ~132 | Multi-monitor screenshot capture using ScreenCaptureKit. Returns labeled image data for each connected display. |
 | `BuddyDictationManager.swift` | ~866 | Push-to-talk voice pipeline. Handles microphone capture via `AVAudioEngine`, provider-aware permission checks, keyboard/button dictation sessions, transcript finalization, shortcut parsing, contextual keyterms, and live audio-level reporting for waveform feedback. |
@@ -92,6 +92,29 @@ Worker vars: `ELEVENLABS_VOICE_ID`
 | `WindowPositionManager.swift` | ~262 | Window placement logic, Screen Recording permission flow, and accessibility permission helpers. |
 | `AppBundleConfiguration.swift` | ~28 | Runtime configuration reader for keys stored in the app bundle Info.plist. |
 | `worker/src/index.ts` | ~142 | Cloudflare Worker proxy. Three routes: `/chat` (Claude), `/tts` (ElevenLabs), `/transcribe-token` (AssemblyAI temp token). |
+| `HandsFreeSessionCoordinator.swift` | ~470 | Lead. Hands-free state machine (idle/capturing/listening/thinking/awaitingConfirmation/presenting/awaitingClick). Summon (wake word or Control+Option tap) -> capture -> dim -> utterance -> BrainTransport (channel, headless, else direct-API fallback) -> annotations + speech. Handles Esc, barge-in, errors; logs `tts_start`; pauses the wake word while speaking. |
+| `WakeWordDetector.swift` | ~207 | WS1. "Hey Clicky" detection via on-device SFSpeechRecognizer; `SummonTriggerProvider`; mints the request ID via `ClickyLatencyLog.recordWake`. |
+| `SummonKeyboardShortcutMonitor.swift` | ~136 | WS1. Quick Control+Option tap (< 250 ms, no other key) detector with its own listen-only CGEvent tap; hold-to-talk stays in `GlobalPushToTalkShortcutMonitor`. |
+| `RequestScreenCaptureService.swift` | ~241 | WS1. `ScreenCaptureForRequestProvider`: cursor screen (or all screens) to `~/.clicky/shots/<request_id>-sN.jpg`, long edge 1280, own windows excluded. Also `CapturedScreenForRequest`, request ID minting, signposts. |
+| `PrivacyCaptureGuard.swift` | ~59 | WS1. Skips capture when a password manager / banking app is frontmost (bundle-ID denylist in UserDefaults). |
+| `CaptureDimLayerView.swift` | ~206 | WS1. Per-screen semi-gray dim + status pill (`CaptureDimLayerState`, `CaptureDimLayerView`) and the listen-only Esc monitor active only while dimmed. |
+| `VoiceInputAndSpokenOutputProtocols.swift` | ~30 | WS2. `@MainActor` `VoiceUtteranceProvider` and `SpokenResponseOutput` protocols. |
+| `VoiceInputCoordinator.swift` | ~300 | WS2. `VoiceUtteranceProvider`: shows `VoiceInputPanel`, drives Wispr Flow, waits for end of speech, falls back to Apple Speech (`clicky.voice.inputSource` = `wisprFlow`/`appleSpeech`). |
+| `VoiceInputPanel.swift` | ~155 | WS2. Non-activating, key-capable panel with a text field that Wispr Flow types into. |
+| `WisprFlowDriver.swift` | ~103 | WS2. Starts/stops Wispr Flow by sending its configured trigger key chord or mouse button. |
+| `EndOfSpeechDetector.swift` | ~244 | WS2. Mic-level VAD that decides when the user stopped talking; keeps a rolling buffer for the Apple Speech fallback. |
+| `LocalSpokenResponseOutput.swift` | ~113 | WS2. `SpokenResponseOutput` implementations: on-device `AVSpeechSynthesizer` (default in hands-free) and an ElevenLabs wrapper. `speak` returns when speech ends. |
+| `BrainTransport.swift` | ~264 | WS3. `BrainTransport` protocol, `CompanionRequest`/`CompanionResponse`/`CompanionEvent` models, wire encoding, `ClickyRuntimePaths`. |
+| `BrainTransportSelector.swift` | ~45 | WS3. Picks the channel transport, then headless; nil means the direct Claude API path. |
+| `ClaudeCodeChannelTransport.swift` | ~224 | WS3. Primary transport: HTTP + SSE to the local `bridge/clicky-channel` server with a bearer token. |
+| `ClaudeCodeHeadlessTransport.swift` | ~218 | WS3. Fallback transport: `claude -p` with session resume and JSON-schema output. |
+| `ServerSentEventParser.swift` | ~91 | WS3. Incremental SSE parser for the bridge event stream. |
+| `ClickyLatencyLog.swift` | ~77 | WS6. Appends latency lines to `~/.clicky/logs/app-YYYY-MM-DD.log`; `latestWakeRequestID` is the request ID for the current summon. |
+| `AnnotationShape.swift` | ~186 | WS4. Codable `AnnotationShape`, `WalkthroughStep` (CONTRACTS section 5). |
+| `AnnotationCoordinateMapper.swift` | ~271 | WS4. Screenshot pixels to AppKit global points, per-shape geometry, click hit testing. |
+| `AnnotationLayerView.swift` | ~319 | WS4. `AnnotationLayerState` (present / clear / speechDidEnd fade) and `AnnotationLayerView` Canvas; exposes the primary shape's cursor target. |
+| `AccessibilityElementSnapper.swift` | ~99 | WS4. Snaps a shape to the Accessibility element under a point. |
+| `ClickTargetWatcher.swift` | ~58 | WS4. Listen-only mouse-down watcher used for walkthrough steps that expect a click. |
 
 ## Build & Run
 

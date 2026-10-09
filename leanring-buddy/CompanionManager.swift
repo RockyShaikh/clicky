@@ -74,14 +74,15 @@ final class CompanionManager: ObservableObject {
     let summonKeyboardShortcutMonitor = SummonKeyboardShortcutMonitor()
     private(set) var handsFreeSessionCoordinator: HandsFreeSessionCoordinator?
     /// One annotation state per screen, created on demand and kept so BlueCursorView and the coordinator share it.
-    private var annotationLayerStatesByScreenFrame: [CGRect: AnnotationLayerState] = [:]
+    // An array, not a dictionary: CGRect is only Hashable on macOS 15+ and the app targets 14.2.
+    private var annotationLayerStates: [AnnotationLayerState] = []
 
     func annotationLayerState(forScreenFrame screenFrame: CGRect) -> AnnotationLayerState {
-        if let existingAnnotationLayerState = annotationLayerStatesByScreenFrame[screenFrame] {
+        if let existingAnnotationLayerState = annotationLayerStates.first(where: { $0.screenFrameInAppKitGlobalPoints == screenFrame }) {
             return existingAnnotationLayerState
         }
         let newAnnotationLayerState = AnnotationLayerState(screenFrameInAppKitGlobalPoints: screenFrame)
-        annotationLayerStatesByScreenFrame[screenFrame] = newAnnotationLayerState
+        annotationLayerStates.append(newAnnotationLayerState)
         return newAnnotationLayerState
     }
     // Response text is now displayed inline on the cursor overlay via
