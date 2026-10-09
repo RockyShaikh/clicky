@@ -197,6 +197,7 @@ struct BlueCursorView: View {
             // Layer order (CONTRACTS section 7): dim lowest, annotations above it, blue cursor above both.
             CaptureDimLayerView(state: captureDimLayerState, screenFrame: screenFrame)
             AnnotationLayerView(state: annotationLayerState)
+            DoModeStatusBubbleView(state: companionManager.doModeStatusState, screenFrame: screenFrame)
 
             // Welcome speech bubble (first launch only)
             if isCursorOnThisScreen && showWelcome && !welcomeText.isEmpty {

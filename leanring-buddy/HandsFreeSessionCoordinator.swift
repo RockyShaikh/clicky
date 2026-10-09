@@ -66,6 +66,8 @@ final class HandsFreeSessionCoordinator: ObservableObject {
     var sessionFinishedHandler: (() -> Void)?
     /// Called when a session starts, so upstream push-to-talk / TTS state can be reset.
     var sessionStartedHandler: (() -> Void)?
+    /// Do mode (WS5): status lines and the confirmation question the overlay draws near the cursor.
+    var doModeStatusState: DoModeStatusState?
 
     private let screenCaptureProvider: ScreenCaptureForRequestProvider
     private let voiceUtteranceProvider: VoiceUtteranceProvider
@@ -93,6 +95,14 @@ final class HandsFreeSessionCoordinator: ObservableObject {
     private var capturedScreensForCurrentRequest: [CapturedScreenForRequest] = []
     private var annotationLayerStateShowingShapes: AnnotationLayerState?
     private var currentWalkthroughStepIndex = 1
+    private var summonCursorLocationInAppKitGlobalPoints: CGPoint = .zero
+    private lazy var spokenConfirmationListener = SpokenConfirmationListener(
+        voiceUtteranceProvider: voiceUtteranceProvider,
+        speakText: { [weak self] textToSpeak in
+            guard let self, let currentRequestID = self.currentRequestID else { return }
+            await self.speakResponseText(textToSpeak, requestID: currentRequestID)
+        }
+    )
 
     init(
         screenCaptureProvider: ScreenCaptureForRequestProvider,
@@ -176,6 +186,8 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         currentRequestWasSentToTransport = false
         currentWalkthroughStepIndex = 1
         lastErrorMessage = nil
+        summonCursorLocationInAppKitGlobalPoints = NSEvent.mouseLocation
+        doModeStatusState?.clear()
         sessionStartedHandler?()
 
         summonTask = Task { [weak self] in
@@ -232,16 +244,21 @@ final class HandsFreeSessionCoordinator: ObservableObject {
             sessionState = .thinking
             captureDimLayerState.setPhase(.thinking)
 
+            let utteranceLooksLikeDoRequest = DoModeRequestClassifier.utteranceLooksLikeDoRequest(trimmedUtteranceText)
+            let frontmostBrowserTab = utteranceLooksLikeDoRequest
+                ? FrontmostBrowserTab.currentTab(frontmostBundleIdentifier: frontmostApplication?.bundleIdentifier)
+                : nil
+
             let companionRequest = CompanionRequest(
                 requestID: requestID,
                 utteranceText: trimmedUtteranceText,
-                mode: .auto,
+                mode: utteranceLooksLikeDoRequest ? .doTask : .auto,
                 capturedScreens: capturedScreens,
                 frontmostApplicationName: frontmostApplication?.localizedName,
                 frontmostApplicationBundleIdentifier: frontmostApplication?.bundleIdentifier,
                 frontmostWindowTitle: nil,
-                frontmostBrowserTabURL: nil,
-                frontmostBrowserTabTitle: nil
+                frontmostBrowserTabURL: frontmostBrowserTab?.url,
+                frontmostBrowserTabTitle: frontmostBrowserTab?.title
             )
 
             guard let selectedTransport = await selectTransportForCurrentPreference() else {
@@ -252,6 +269,12 @@ final class HandsFreeSessionCoordinator: ObservableObject {
                 return
             }
             guard isCurrent(generation) else { return }
+
+            // Claude in Chrome needs the interactive channel session; headless cannot act on pages.
+            if companionRequest.mode == .doTask, selectedTransport === headlessTransport {
+                await reportFailure(spokenMessage: DoModeRequestClassifier.headlessCannotDoWebActionsSpokenMessage, generation: generation)
+                return
+            }
 
             activeTransport = selectedTransport
             currentRequestWasSentToTransport = true
@@ -285,9 +308,14 @@ final class HandsFreeSessionCoordinator: ObservableObject {
 
     private func handleCompanionEvent(_ companionEvent: CompanionEvent) {
         switch companionEvent {
-        case .status(let requestID, _):
+        case .status(let requestID, let statusText):
             guard requestID == currentRequestID, sessionState == .thinking else { return }
             captureDimLayerState.setPhase(.thinking)
+            doModeStatusState?.showStatus(
+                statusText,
+                onScreenWithFrame: screenFrameForDoModeBubble(),
+                cursorLocation: summonCursorLocationInAppKitGlobalPoints
+            )
         case .respond(let companionResponse):
             guard companionResponse.requestID == currentRequestID else { return }
             present(companionResponse)
@@ -308,6 +336,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         let generationAtPresent = sessionGeneration
         presentationTask?.cancel()
         clickTargetWatcher.stopWatching()
+        doModeStatusState?.clear()
         sessionState = .presenting
 
         // The dim lifts when shapes draw (ARCHITECTURE.md "Point/teach").
@@ -381,38 +410,48 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         presentationTask?.cancel()
         captureDimLayerState.dismiss()
         sessionState = .awaitingConfirmation
+        doModeStatusState?.showConfirmationQuestion(
+            question,
+            onScreenWithFrame: screenFrameForDoModeBubble(),
+            cursorLocation: summonCursorLocationInAppKitGlobalPoints
+        )
 
         presentationTask = Task { [weak self] in
             guard let self else { return }
-            await self.speakResponseText(question, requestID: requestID)
-            guard generationAtQuestion == self.sessionGeneration, !Task.isCancelled else { return }
             do {
-                let answerText = try await self.voiceUtteranceProvider.captureUtterance(onScreen: self.capturedScreensForCurrentRequest.first)
+                let confirmationResult = try await self.spokenConfirmationListener.askQuestionAndListenForAnswer(
+                    question: question,
+                    onScreen: self.capturedScreensForCurrentRequest.first(where: { $0.isCursorScreen }) ?? self.capturedScreensForCurrentRequest.first
+                )
                 guard generationAtQuestion == self.sessionGeneration, !Task.isCancelled else { return }
+                self.doModeStatusState?.clearConfirmationQuestion()
                 self.sessionState = .thinking
                 try await self.activeTransport?.sendFollowUp(.confirmation(
                     requestID: requestID,
-                    answerIsYes: Self.answerIsAffirmative(answerText),
-                    utteranceText: answerText
+                    answerIsYes: confirmationResult.answerIsYes,
+                    utteranceText: confirmationResult.utteranceText
                 ))
+            } catch is CancellationError {
+                // Cancelled on purpose.
             } catch VoiceInputError.cancelled {
                 // Cancelled on purpose.
             } catch {
                 guard generationAtQuestion == self.sessionGeneration else { return }
+                // No answer means no: tell the brain so it leaves the page untouched.
+                try? await self.activeTransport?.sendFollowUp(.confirmation(requestID: requestID, answerIsYes: false, utteranceText: ""))
                 await self.reportFailure(spokenMessage: "I didn't catch your answer, so I stopped.", generation: generationAtQuestion, detail: error.localizedDescription)
             }
         }
     }
 
+    private func screenFrameForDoModeBubble() -> CGRect? {
+        let screenForBubble = capturedScreensForCurrentRequest.first(where: { $0.isCursorScreen }) ?? capturedScreensForCurrentRequest.first
+        return screenForBubble?.displayFrameInAppKitGlobalPoints
+    }
+
     /// Conservative: anything that is not clearly "yes" counts as no, so nothing irreversible runs on a mishear.
     static func answerIsAffirmative(_ answerText: String) -> Bool {
-        let answerWords = Set(answerText.lowercased().components(separatedBy: CharacterSet.letters.inverted).filter { !$0.isEmpty })
-        let negativeWords: Set<String> = ["no", "nope", "stop", "cancel", "don't", "dont", "wait", "never"]
-        let affirmativeWords: Set<String> = ["yes", "yeah", "yep", "yup", "sure", "ok", "okay", "confirm", "proceed", "submit", "continue"]
-        if !answerWords.isDisjoint(with: negativeWords) { return false }
-        if !answerWords.isDisjoint(with: affirmativeWords) { return true }
-        let lowercasedAnswer = answerText.lowercased()
-        return lowercasedAnswer.contains("go ahead") || lowercasedAnswer.contains("do it")
+        SpokenConfirmationAnswer.classify(answerText) == .yes
     }
 
     // MARK: - Failure and cancel
@@ -444,6 +483,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         annotationLayerStateShowingShapes?.clear()
         annotationLayerStateShowingShapes = nil
         captureDimLayerState.dismiss()
+        doModeStatusState?.clear()
 
         if let requestID = currentRequestID, currentRequestWasSentToTransport, let transportToCancel = activeTransport {
             Task { await transportToCancel.cancelRequest(requestID: requestID) }
@@ -460,6 +500,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
     /// transient-cursor fade-out, and ours would hide the overlay while it is still answering.
     private func finishSession(notifyFinishedHandler: Bool = true) {
         captureDimLayerState.dismiss()
+        doModeStatusState?.clear()
         wakeWordSummonProvider?.pauseListeningWhileSpeaking(false)
         currentRequestID = nil
         currentRequestWasSentToTransport = false
