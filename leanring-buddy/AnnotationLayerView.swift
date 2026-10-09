@@ -8,6 +8,7 @@
 //  and connects the blue-cursor flight to `state.primaryShapeCursorTargetInAppKitGlobalPoints`.
 //
 
+import Combine
 import SwiftUI
 import AppKit
 

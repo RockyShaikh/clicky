@@ -17,6 +17,7 @@
 //  One request ID is used per summon: the one minted by `ClickyLatencyLog.recordWake`.
 //
 
+import Combine
 import AppKit
 import Foundation
 

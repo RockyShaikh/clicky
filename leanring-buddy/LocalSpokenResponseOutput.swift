@@ -7,6 +7,7 @@
 //  `speak` returns when speech has finished (or was stopped), not when it starts.
 //
 
+import Combine
 import AVFoundation
 import Foundation
 
