@@ -1,0 +1,14 @@
+{
+  "request_id": "r_fixture0003",
+  "say": "Labels must not overflow the screen.",
+  "screen_index": 1,
+  "image_width_px": 1280,
+  "image_height_px": 831,
+  "shapes": [
+    { "kind": "box", "x": 1180, "y": 780, "x2": 1275, "y2": 825, "label": "bottom right corner label" },
+    { "kind": "circle", "x": 20, "y": 20, "r": 14, "label": "top left corner label" },
+    { "kind": "label", "x": 1270, "y": 400, "text": "right edge" }
+  ],
+  "expect_click": false,
+  "final": true
+}
