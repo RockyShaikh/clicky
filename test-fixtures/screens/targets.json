@@ -1,0 +1,402 @@
+[
+  {
+    "file": "finder-sidebar-downloads.png",
+    "question": "Where do I find my downloads folder?",
+    "target_box_px": [
+      10,
+      294,
+      230,
+      328
+    ],
+    "app_bundle_id": "com.apple.finder",
+    "app_name": "Finder",
+    "window_title": "Documents",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "finder-share-button.png",
+    "question": "How do I share this folder?",
+    "target_box_px": [
+      396,
+      66,
+      482,
+      94
+    ],
+    "app_bundle_id": "com.apple.finder",
+    "app_name": "Finder",
+    "window_title": "Projects",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "finder-tags.png",
+    "question": "How do I tag this file?",
+    "target_box_px": [
+      496,
+      66,
+      570,
+      94
+    ],
+    "app_bundle_id": "com.apple.finder",
+    "app_name": "Finder",
+    "window_title": "Desktop",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "notes-font-size.png",
+    "question": "Where do I change the font size?",
+    "target_box_px": [
+      308,
+      66,
+      406,
+      94
+    ],
+    "app_bundle_id": "com.apple.Notes",
+    "app_name": "Notes",
+    "window_title": "Groceries",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "notes-checklist.png",
+    "question": "How do I turn this into a checklist?",
+    "target_box_px": [
+      420,
+      66,
+      554,
+      94
+    ],
+    "app_bundle_id": "com.apple.Notes",
+    "app_name": "Notes",
+    "window_title": "Todo",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "notes-new-note.png",
+    "question": "How do I start a new note?",
+    "target_box_px": [
+      120,
+      66,
+      182,
+      94
+    ],
+    "app_bundle_id": "com.apple.Notes",
+    "app_name": "Notes",
+    "window_title": "Ideas",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "safari-privacy.png",
+    "question": "Where are the privacy settings?",
+    "target_box_px": [
+      10,
+      294,
+      230,
+      328
+    ],
+    "app_bundle_id": "com.apple.Safari",
+    "app_name": "Safari",
+    "window_title": "Settings",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "safari-clear-data.png",
+    "question": "How do I clear my cookies?",
+    "target_box_px": [
+      1020,
+      328,
+      1216,
+      362
+    ],
+    "app_bundle_id": "com.apple.Safari",
+    "app_name": "Safari",
+    "window_title": "Privacy",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "chrome-extensions.png",
+    "question": "Where do I manage my extensions?",
+    "target_box_px": [
+      10,
+      338,
+      230,
+      372
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Chrome",
+    "window_title": "Settings",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "chrome-default-browser.png",
+    "question": "How do I make Chrome my default browser?",
+    "target_box_px": [
+      1020,
+      148,
+      1216,
+      182
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Chrome",
+    "window_title": "Settings",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "chrome-signup-form.png",
+    "question": "Where do I submit this form?",
+    "target_box_px": [
+      1020,
+      418,
+      1216,
+      452
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Chrome",
+    "window_title": "Create account",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "sysset-wifi.png",
+    "question": "How do I turn Wi-Fi off?",
+    "target_box_px": [
+      1140,
+      150,
+      1210,
+      180
+    ],
+    "app_bundle_id": "com.apple.systempreferences",
+    "app_name": "System Settings",
+    "window_title": "Wi-Fi",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "sysset-displays.png",
+    "question": "Where can I change my screen resolution?",
+    "target_box_px": [
+      10,
+      382,
+      230,
+      416
+    ],
+    "app_bundle_id": "com.apple.systempreferences",
+    "app_name": "System Settings",
+    "window_title": "General",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "sysset-sound.png",
+    "question": "How do I make my speakers quieter?",
+    "target_box_px": [
+      800,
+      236,
+      1216,
+      274
+    ],
+    "app_bundle_id": "com.apple.systempreferences",
+    "app_name": "System Settings",
+    "window_title": "Sound",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "xcode-run.png",
+    "question": "How do I build and run this?",
+    "target_box_px": [
+      120,
+      66,
+      182,
+      94
+    ],
+    "app_bundle_id": "com.apple.dt.Xcode",
+    "app_name": "Xcode",
+    "window_title": "Clicky",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "xcode-issues.png",
+    "question": "Where do I see the build errors?",
+    "target_box_px": [
+      10,
+      250,
+      230,
+      284
+    ],
+    "app_bundle_id": "com.apple.dt.Xcode",
+    "app_name": "Xcode",
+    "window_title": "Clicky",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "xcode-inspector.png",
+    "question": "How do I open the right-hand inspector panel?",
+    "target_box_px": [
+      520,
+      66,
+      654,
+      94
+    ],
+    "app_bundle_id": "com.apple.dt.Xcode",
+    "app_name": "Xcode",
+    "window_title": "Clicky",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "vscode-extensions.png",
+    "question": "Where do I install a plugin?",
+    "target_box_px": [
+      10,
+      294,
+      230,
+      328
+    ],
+    "app_bundle_id": "com.microsoft.VSCode",
+    "app_name": "VS Code",
+    "window_title": "main.ts",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "vscode-source-control.png",
+    "question": "How do I commit my changes?",
+    "target_box_px": [
+      10,
+      206,
+      230,
+      240
+    ],
+    "app_bundle_id": "com.microsoft.VSCode",
+    "app_name": "VS Code",
+    "window_title": "app.py",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "vscode-search.png",
+    "question": "How do I search across all files?",
+    "target_box_px": [
+      10,
+      162,
+      230,
+      196
+    ],
+    "app_bundle_id": "com.microsoft.VSCode",
+    "app_name": "VS Code",
+    "window_title": "app.py",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "figma-share.png",
+    "question": "How do I share this design?",
+    "target_box_px": [
+      696,
+      66,
+      782,
+      94
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Figma",
+    "window_title": "Landing page",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "figma-text-tool.png",
+    "question": "Which tool do I use to add text?",
+    "target_box_px": [
+      484,
+      66,
+      558,
+      94
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Figma",
+    "window_title": "Landing page",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "gdocs-share.png",
+    "question": "How do I give my friend access to this doc?",
+    "target_box_px": [
+      708,
+      66,
+      794,
+      94
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Google Docs",
+    "window_title": "Essay draft",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "gdocs-insert.png",
+    "question": "Where do I add an image?",
+    "target_box_px": [
+      384,
+      66,
+      482,
+      94
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Google Docs",
+    "window_title": "Essay draft",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  },
+  {
+    "file": "gdocs-format.png",
+    "question": "How do I change the line spacing?",
+    "target_box_px": [
+      496,
+      66,
+      594,
+      94
+    ],
+    "app_bundle_id": "com.google.Chrome",
+    "app_name": "Google Docs",
+    "window_title": "Essay draft",
+    "width_px": 1280,
+    "height_px": 800,
+    "synthetic": true
+  }
+]
