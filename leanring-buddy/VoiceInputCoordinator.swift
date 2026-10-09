@@ -61,6 +61,9 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
     /// does not reach a non-activating panel; the previous frontmost app is restored afterwards.
     static let panelActivationModeUserDefaultsKey = "clicky.voice.panelActivationMode"
 
+    /// "wisprFlow" (default) or "appleSpeech". Apple Speech skips Flow even when Flow is running.
+    static let voiceInputSourceUserDefaultsKey = "clicky.voice.inputSource"
+
     /// How long after stopping Flow we wait for text before falling back to Apple Speech.
     private let secondsToWaitForFlowTextAfterStop: TimeInterval = 2.5
     private let secondsFieldTextMustStayUnchanged: TimeInterval = 0.5
@@ -106,6 +109,7 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
 
         let previouslyFrontmostApplication = NSWorkspace.shared.frontmostApplication
         let shouldUseFlow = wisprFlowDriver.isWisprFlowRunning
+            && userDefaults.string(forKey: Self.voiceInputSourceUserDefaultsKey) != "appleSpeech"
         var didStartFlow = false
 
         defer {

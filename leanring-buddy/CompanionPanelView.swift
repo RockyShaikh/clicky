@@ -14,6 +14,15 @@ struct CompanionPanelView: View {
     @ObservedObject var companionManager: CompanionManager
     @State private var emailInput: String = ""
 
+    // Hands-free settings. Keys come from the workstream files that read them (see
+    // HandsFreeSessionCoordinator.swift for the ones that live there).
+    @AppStorage(BrainTransportPreference.userDefaultsKey) private var brainTransportPreferenceRawValue = BrainTransportPreference.defaultPreference.rawValue
+    @AppStorage(VoiceInputCoordinator.voiceInputSourceUserDefaultsKey) private var voiceInputSourceRawValue = "wisprFlow"
+    @AppStorage(HandsFreeSettingsKeys.wakeWordEnabled) private var isWakeWordEnabled = true
+    @AppStorage(HandsFreeSettingsKeys.wakeWordSensitivity) private var wakeWordSensitivity = 0.5
+    @AppStorage(CaptureDimLayerState.dimOpacityPercentUserDefaultsKey) private var dimOpacityPercent = CaptureDimLayerState.defaultDimOpacityPercent
+    @AppStorage(RequestScreenCaptureService.captureAllScreensUserDefaultsKey) private var shouldCaptureAllScreens = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             panelHeader
@@ -30,6 +39,12 @@ struct CompanionPanelView: View {
                     .frame(height: 12)
 
                 modelPickerRow
+                    .padding(.horizontal, 16)
+
+                Spacer()
+                    .frame(height: 12)
+
+                handsFreeSettingsSection
                     .padding(.horizontal, 16)
             }
 
@@ -639,6 +654,140 @@ struct CompanionPanelView: View {
         }
         .buttonStyle(.plain)
         .pointerCursor()
+    }
+
+    // MARK: - Hands-Free Settings
+
+    private var handsFreeSettingsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("HANDS-FREE")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(DS.Colors.textTertiary)
+
+            settingsChoiceRow(
+                title: "Brain",
+                choices: [("Channel", "channel"), ("Headless", "headless"), ("Direct", "direct")],
+                selectedValue: $brainTransportPreferenceRawValue
+            )
+            settingsChoiceRow(
+                title: "Voice input",
+                choices: [("Wispr Flow", "wisprFlow"), ("Apple Speech", "appleSpeech")],
+                selectedValue: $voiceInputSourceRawValue
+            )
+
+            HStack {
+                Text("Hey Clicky")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(DS.Colors.textSecondary)
+                Spacer()
+                Toggle("", isOn: $isWakeWordEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .tint(DS.Colors.accent)
+                    .scaleEffect(0.8)
+                    .pointerCursor()
+                    .onChange(of: isWakeWordEnabled) { _ in
+                        companionManager.applyWakeWordEnabledSetting()
+                    }
+            }
+
+            if isWakeWordEnabled {
+                settingsSliderRow(
+                    title: "Sensitivity",
+                    valueText: "\(Int(wakeWordSensitivity * 100))%",
+                    value: $wakeWordSensitivity,
+                    range: 0...1
+                )
+            }
+
+            settingsSliderRow(
+                title: "Dim",
+                valueText: "\(dimOpacityPercent)%",
+                value: Binding(
+                    get: { Double(dimOpacityPercent) },
+                    set: { dimOpacityPercent = Int($0.rounded()) }
+                ),
+                range: Double(CaptureDimLayerState.allowedDimOpacityPercentRange.lowerBound)...Double(CaptureDimLayerState.allowedDimOpacityPercentRange.upperBound)
+            )
+
+            HStack {
+                Text("Capture all screens")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(DS.Colors.textSecondary)
+                Spacer()
+                Toggle("", isOn: $shouldCaptureAllScreens)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .tint(DS.Colors.accent)
+                    .scaleEffect(0.8)
+                    .pointerCursor()
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// A row with a title and a small segmented control, in the same style as the model picker.
+    private func settingsChoiceRow(
+        title: String,
+        choices: [(label: String, value: String)],
+        selectedValue: Binding<String>
+    ) -> some View {
+        HStack {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(DS.Colors.textSecondary)
+
+            Spacer()
+
+            HStack(spacing: 0) {
+                ForEach(choices, id: \.value) { choice in
+                    let isSelected = selectedValue.wrappedValue == choice.value
+                    Button(action: { selectedValue.wrappedValue = choice.value }) {
+                        Text(choice.label)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(isSelected ? DS.Colors.textPrimary : DS.Colors.textTertiary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(isSelected ? Color.white.opacity(0.1) : Color.clear)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .pointerCursor()
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.white.opacity(0.06))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(DS.Colors.borderSubtle, lineWidth: 0.5)
+            )
+        }
+    }
+
+    private func settingsSliderRow(
+        title: String,
+        valueText: String,
+        value: Binding<Double>,
+        range: ClosedRange<Double>
+    ) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(DS.Colors.textSecondary)
+
+            Slider(value: value, in: range)
+                .tint(DS.Colors.accent)
+                .pointerCursor()
+
+            Text(valueText)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(DS.Colors.textTertiary)
+                .frame(width: 34, alignment: .trailing)
+        }
     }
 
     // MARK: - DM Farza Button
