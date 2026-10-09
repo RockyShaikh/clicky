@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__clicky__*",
+      "Read(~/.clicky/profile.md)",
+      "Read(~/ClickyWorkspace/**)",
+      "Write(~/ClickyWorkspace/**)",
+      "Edit(~/ClickyWorkspace/**)"
+    ],
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.clicky/bridge-token)",
+      "Read(~/.aws/**)",
+      "Read(~/.config/gh/**)"
+    ]
+  }
+}

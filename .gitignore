@@ -5,6 +5,8 @@ worker/.dev.vars
 build/
 releases/
 .claude/
+# The Clicky session template ships its permission rules on purpose.
+!session-template/.claude/
 coding-plans/
 
 # fork: private runtime data and build outputs (never commit)
