@@ -6,3 +6,11 @@ build/
 releases/
 .claude/
 coding-plans/
+
+# fork: private runtime data and build outputs (never commit)
+.clicky/
+*.local.md
+profile.md
+bridge/**/node_modules/
+bridge/**/dist/
+build/agent-check/

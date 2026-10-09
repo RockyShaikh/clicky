@@ -1,0 +1,751 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Clicky, Taken Apart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column (~70ch) with a sticky contents rail on wide screens; a screen-with-annotation figure opens the page. */
+:root {
+  --paper: #F2F4F8;
+  --surface: #FFFFFF;
+  --ink: #141820;
+  --muted: #586273;
+  --rule: #D7DCE5;
+  --pen: #1E55F0;
+  --pen-soft: #E2E9FF;
+  --mark: #D2402F;
+  --mark-soft: #FCE8E4;
+  --ok: #1E7F4E;
+  --ok-soft: #E1F3E9;
+  --code-bg: #ECEFF5;
+  --grid: #E3E7EE;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --step--1: 0.84rem;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.5rem;
+  --step-3: 2.05rem;
+  --step-4: clamp(2.3rem, 5.4vw, 3.6rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1116; --surface: #151920; --ink: #E6EAF0; --muted: #98A2B1; --rule: #29303B;
+    --pen: #85A5FF; --pen-soft: #1A2546; --mark: #FF7D6E; --mark-soft: #3A1E1A;
+    --ok: #5FD39A; --ok-soft: #14301F; --code-bg: #1A1F28; --grid: #1F2530;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1116; --surface: #151920; --ink: #E6EAF0; --muted: #98A2B1; --rule: #29303B;
+  --pen: #85A5FF; --pen-soft: #1A2546; --mark: #FF7D6E; --mark-soft: #3A1E1A;
+  --ok: #5FD39A; --ok-soft: #14301F; --code-bg: #1A1F28; --grid: #1F2530;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.62;
+  padding-inline: 16px;
+  padding-block: 0 64px;
+}
+a { color: var(--pen); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; border-radius: 4px; }
+
+.shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+@media (min-width: 1000px) {
+  .shell { grid-template-columns: 210px minmax(0, 1fr); gap: 56px; }
+}
+
+/* contents rail */
+.toc { display: none; }
+@media (min-width: 1000px) {
+  .toc {
+    display: block;
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 28px);
+    align-self: start;
+    padding-top: 36px;
+    font-size: var(--step--1);
+  }
+}
+.toc p { font-family: var(--f-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 0.72rem; margin: 0 0 10px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.toc a { color: var(--muted); text-decoration: none; display: block; padding-left: 10px; border-left: 2px solid var(--rule); }
+.toc a:hover { color: var(--ink); border-left-color: var(--pen); }
+
+main { min-width: 0; max-width: 46rem; }
+
+/* header */
+header.hero { padding-top: 40px; display: grid; gap: 18px; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: var(--step-4);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.lede { font-size: var(--step-1); color: var(--muted); margin: 0; max-width: 40rem; text-wrap: pretty; }
+
+figure.screen { margin: 10px 0 0; }
+.screen-frame {
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.screen-frame svg { display: block; width: 100%; height: auto; }
+figure.screen figcaption { font-size: var(--step--1); color: var(--muted); margin-top: 8px; }
+
+/* sections */
+section { padding-top: 48px; }
+h2 {
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: var(--step-3);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+h3 { font-family: var(--f-display); font-weight: 700; font-size: var(--step-2); line-height: 1.2; margin: 32px 0 10px; text-wrap: balance; }
+h4 { font-size: var(--step-0); font-weight: 600; margin: 22px 0 6px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 14px; padding-left: 1.3rem; }
+li { margin-bottom: 6px; }
+li::marker { color: var(--muted); }
+strong { font-weight: 600; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 40px 0 0; }
+
+code { font-family: var(--f-mono); font-size: 0.88em; background: var(--code-bg); padding: 0.08em 0.36em; border-radius: 4px; }
+.codeblock { position: relative; margin: 0 0 18px; }
+.codeblock .cb-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-family: var(--f-mono); font-size: 0.74rem; color: var(--muted); padding: 7px 12px; border: 1px solid var(--rule); border-bottom: 0; border-radius: 8px 8px 0 0; background: var(--surface); }
+.codeblock pre { margin: 0; overflow-x: auto; background: var(--code-bg); border: 1px solid var(--rule); border-radius: 0 0 8px 8px; padding: 14px 14px; font-family: var(--f-mono); font-size: 0.8rem; line-height: 1.55; }
+.codeblock pre code { background: none; padding: 0; font-size: inherit; }
+.copy { font: inherit; font-size: 0.72rem; color: var(--pen); background: transparent; border: 1px solid var(--rule); border-radius: 6px; padding: 2px 9px; cursor: pointer; }
+.copy:hover { border-color: var(--pen); }
+
+/* answer list in TL;DR */
+.answers { display: grid; gap: 0; margin: 0 0 8px; padding: 0; list-style: none; border-top: 1px solid var(--rule); }
+.answers li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; padding: 16px 0; border-bottom: 1px solid var(--rule); margin: 0; }
+@media (min-width: 640px) { .answers li { grid-template-columns: 13rem minmax(0, 1fr); gap: 20px; } }
+.answers .q { font-family: var(--f-display); font-weight: 700; font-size: 1.04rem; line-height: 1.3; }
+.answers .a p:last-child { margin-bottom: 0; }
+
+/* evidence chips */
+.chip { display: inline-block; font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; vertical-align: 0.12em; margin-right: 4px; white-space: nowrap; border: 1px solid transparent; }
+.chip.code { background: var(--ok-soft); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 30%, transparent); }
+.chip.said { background: var(--pen-soft); color: var(--pen); border-color: color-mix(in srgb, var(--pen) 30%, transparent); }
+.chip.guess { background: var(--mark-soft); color: var(--mark); border-color: color-mix(in srgb, var(--mark) 30%, transparent); }
+.legend { font-size: var(--step--1); color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 18px; }
+
+/* tables */
+.table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.88rem; min-width: 560px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); background: var(--surface); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kv td:first-child { width: 11rem; color: var(--muted); }
+
+/* pipeline */
+.pipeline { list-style: none; padding: 0; margin: 0 0 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: stage; }
+.pipeline li { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px 12px; counter-increment: stage; min-width: 0; }
+.pipeline li::before { content: counter(stage); font-family: var(--f-mono); font-size: 0.72rem; color: var(--pen); display: block; margin-bottom: 2px; }
+.pipeline b { display: block; font-weight: 600; font-size: 0.92rem; line-height: 1.3; }
+.pipeline span { display: block; font-size: 0.8rem; color: var(--muted); line-height: 1.45; margin-top: 4px; }
+
+/* callouts */
+.verdict { border: 1px solid var(--pen); background: var(--pen-soft); border-radius: 10px; padding: 16px 18px; margin: 18px 0; }
+.verdict .label { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--pen); margin: 0 0 6px; }
+.verdict p:last-child { margin-bottom: 0; }
+.caution { border-left: 3px solid var(--mark); padding: 2px 0 2px 14px; margin: 16px 0; color: var(--ink); }
+.caution p:last-child { margin-bottom: 0; }
+
+blockquote { margin: 14px 0; padding: 10px 14px; border-left: 3px solid var(--rule); color: var(--muted); font-style: italic; }
+blockquote p:last-child { margin-bottom: 0; }
+
+/* math worked example */
+.math { font-family: var(--f-mono); font-size: 0.82rem; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 0 0 18px; line-height: 1.7; white-space: pre; }
+
+/* workflow cards */
+.paths { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin: 0 0 18px; }
+@media (min-width: 720px) { .paths { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.path { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.path.rec { border-color: var(--pen); }
+.path .tag { font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.path.rec .tag { color: var(--pen); }
+.path h4 { margin: 4px 0 6px; font-family: var(--f-display); font-size: 1.1rem; }
+.path p { font-size: 0.88rem; margin: 0; color: var(--muted); }
+
+.sources ol { font-size: 0.86rem; padding-left: 1.4rem; }
+.sources li { margin-bottom: 4px; overflow-wrap: anywhere; }
+footer { margin-top: 40px; font-size: var(--step--1); color: var(--muted); }
+</style>
+
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <p>Contents</p>
+    <ol>
+      <li><a href="#answers">Short answers</a></li>
+      <li><a href="#company">The company</a></li>
+      <li><a href="#pipeline">How v1 works</a></li>
+      <li><a href="#grounding">Knowing where to draw</a></li>
+      <li><a href="#subscription">Why not your Claude plan</a></li>
+      <li><a href="#build">Build your own</a></li>
+      <li><a href="#wispr">Wispr Flow</a></li>
+      <li><a href="#accuracy">Accuracy recipe</a></li>
+      <li><a href="#plan">Build plan</a></li>
+      <li><a href="#sources">Sources</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <p class="eyebrow">Teardown · October 8, 2026</p>
+      <h1>Clicky, taken apart</h1>
+      <p class="lede">What HeyClicky is, how it decides where to point and draw on your screen, why it can't run on your Claude subscription, and three ways to build the core of it yourself with Claude and Wispr Flow.</p>
+
+      <figure class="screen">
+        <div class="screen-frame">
+          <svg viewBox="0 0 640 300" role="img" aria-labelledby="hero-t">
+            <title id="hero-t">A mock app window with a coordinate grid. A hand-drawn circle surrounds a toolbar button, with an arrow and the tag POINT 1100,42 color inspector.</title>
+            <defs>
+              <pattern id="g" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M20 0H0V20" fill="none" stroke-width="1" style="stroke:var(--grid)"/>
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="640" height="300" style="fill:var(--surface)"/>
+            <rect x="0" y="0" width="640" height="300" fill="url(#g)"/>
+            <!-- window chrome -->
+            <rect x="40" y="34" width="560" height="232" rx="10" style="fill:var(--paper);stroke:var(--rule)"/>
+            <rect x="40" y="34" width="560" height="34" rx="10" style="fill:var(--surface);stroke:var(--rule)"/>
+            <circle cx="60" cy="51" r="5" style="fill:var(--rule)"/>
+            <circle cx="76" cy="51" r="5" style="fill:var(--rule)"/>
+            <circle cx="92" cy="51" r="5" style="fill:var(--rule)"/>
+            <rect x="380" y="43" width="40" height="16" rx="4" style="fill:var(--rule)"/>
+            <rect x="428" y="43" width="40" height="16" rx="4" style="fill:var(--rule)"/>
+            <rect x="476" y="43" width="40" height="16" rx="4" style="fill:var(--rule)"/>
+            <rect x="534" y="42" width="52" height="18" rx="4" stroke-width="1" style="fill:var(--pen-soft);stroke:var(--pen)"/>
+            <!-- content blocks -->
+            <rect x="58" y="86" width="150" height="160" rx="6" style="fill:var(--surface);stroke:var(--rule)"/>
+            <rect x="222" y="86" width="360" height="110" rx="6" style="fill:var(--surface);stroke:var(--rule)"/>
+            <rect x="222" y="208" width="170" height="38" rx="6" style="fill:var(--surface);stroke:var(--rule)"/>
+            <rect x="404" y="208" width="178" height="38" rx="6" style="fill:var(--surface);stroke:var(--rule)"/>
+            <!-- annotation: rough circle -->
+            <path d="M556 33 C 590 31, 602 44, 598 54 C 594 66, 562 71, 538 68 C 516 65, 510 52, 521 41 C 530 33, 548 31, 566 34" fill="none" stroke-width="3" stroke-linecap="round" style="stroke:var(--pen)"/>
+            <!-- arrow -->
+            <path d="M452 132 C 488 118, 524 104, 548 78" fill="none" stroke-width="3" stroke-linecap="round" style="stroke:var(--pen)"/>
+            <path d="M533 80 L 549 77 L 547 93" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--pen)"/>
+            <!-- tag -->
+            <rect x="232" y="124" width="220" height="26" rx="5" style="fill:var(--pen)"/>
+            <text x="342" y="141.5" text-anchor="middle" textLength="200" lengthAdjust="spacingAndGlyphs" font-family="IBM Plex Mono, monospace" font-size="11.5" style="fill:var(--surface)">[POINT:1100,42:color inspector]</text>
+            <!-- axis ticks -->
+            <text x="40" y="22" font-family="IBM Plex Mono, monospace" font-size="10" style="fill:var(--muted)">(0,0)</text>
+            <text x="600" y="290" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" style="fill:var(--muted)">1280 × 800 image px</text>
+          </svg>
+        </div>
+        <figcaption>The whole trick in one picture: the model sees a downscaled screenshot, writes a pixel coordinate into its reply, and the app rescales that point onto your real display and draws there.</figcaption>
+      </figure>
+    </header>
+
+    <section id="answers">
+      <h2>Short answers</h2>
+      <p class="legend"><span><span class="chip code">code</span>read in the open-source repo</span><span><span class="chip said">company</span>stated on heyclicky.com or its changelog</span><span><span class="chip guess">inference</span>my reasoning, not confirmed</span></p>
+      <ul class="answers">
+        <li>
+          <div class="q">What is it?</div>
+          <div class="a"><p>A Mac app (from Humansongs, Inc., founded by Farza Majeed of buildspace, YC Spring 2026) that you summon with a hotkey. It screenshots your screen, listens to your question, answers out loud, and points or draws on top of whatever app you're in. It has since grown into voice-launched agents, computer use, connectors and persistent named assistants.</p></div>
+        </li>
+        <li>
+          <div class="q">How does it know what to draw?</div>
+          <div class="a"><p><span class="chip code">code</span>In the open-source v1, it's prompting. The system prompt tells Claude to end each reply with a tag like <code>[POINT:x,y:label:screenN]</code> in the screenshot's pixel space. A regex pulls it out and Swift rescales it onto the display. The accuracy comes from the frontier model's own GUI-grounding training, which Anthropic did (it trained Claude to "count pixels" for computer use). I found no sign Clicky fine-tunes anything, and it has switched model vendors several times, which a custom fine-tune would make painful.</p></div>
+        </li>
+        <li>
+          <div class="q">Why can't it use my Claude plan?</div>
+          <div class="a"><p>Anthropic's terms don't allow it. Pro/Max sign-in is reserved for Claude Code and Anthropic's own apps, and third-party apps may not offer Claude.ai login or route requests through plan credentials. Enforcement started January 2026. Separately, Clicky now runs mostly on OpenAI models (realtime voice and GPT-6 Luna/Sol), so a Claude plan wouldn't cover it anyway.</p></div>
+        </li>
+        <li>
+          <div class="q">Can I build the core myself?</div>
+          <div class="a"><p>Yes, in an evening. Split it into a <strong>pen</strong> (a click-through overlay that draws shapes from JSON) and a <strong>brain</strong> (whatever produces the JSON). Your subscription can power the brain two legitimate ways: a hotkey script that calls <code>claude -p</code>, or an MCP server that Claude Desktop or Claude Code calls. Wispr Flow needs no integration: it types into whatever text box has focus.</p></div>
+        </li>
+      </ul>
+    </section>
+
+    <section id="company">
+      <h2>The company</h2>
+      <div class="table-wrap">
+        <table class="kv">
+          <tbody>
+            <tr><td>Legal entity</td><td>Humansongs, Inc. (San Francisco). Product renamed from "Clicky" to "HeyClicky" in late May 2026.</td></tr>
+            <tr><td>Founder</td><td>Farza Majeed, previously founder of buildspace (wound down in 2024).</td></tr>
+            <tr><td>Backing</td><td>Y Combinator, Spring 2026 batch. No other round disclosed as of June 2026.</td></tr>
+            <tr><td>Launch</td><td>v1.0 on April 6, 2026. Started as a weekend project; the original was open-sourced under MIT. Launch video reportedly ~3M views; repo ~6.3k stars by June.</td></tr>
+            <tr><td>Platform</td><td>macOS 14.2+ only. Windows has a waitlist.</td></tr>
+            <tr><td>Pricing</td><td>Free (25 talk messages, 25 agent messages/mo) · Pro $20/mo (unlimited talk and dictation, 150 agent messages) · Max $100/mo (1,000 agent messages). Yearly is 20% off. Students get 50% off the first Pro month.</td></tr>
+            <tr><td>Claimed users</td><td>"25,000+" on the homepage (self-reported).</td></tr>
+            <tr><td>Vendors named</td><td>Privacy policy: Anthropic, OpenAI, Deepgram, Cerebras (AI); PostHog (analytics). Trust page adds Sentry and says requests go to "either anthropic or openai."</td></tr>
+            <tr><td>Privacy stance</td><td>Screen captured only on hotkey; screenshots "never stored"; text summaries kept for context; no SOC 2 yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>How the product evolved</h3>
+      <p>The changelog shows a fast drift from "a pointer that talks" toward a general agent. The drawing features arrived in stages:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date (2026)</th><th>Version</th><th>What changed</th></tr></thead>
+          <tbody>
+            <tr><td class="num">Apr 6</td><td class="num">1.0</td><td>Voice assistant that sees your screen, answers aloud, points with a blue cursor.</td></tr>
+            <tr><td class="num">Apr 30</td><td class="num">1.0.11</td><td>"A fast intent classifier" routes requests to agents.</td></tr>
+            <tr><td class="num">May 4</td><td class="num">1.0.12</td><td>Computer control "thanks to our friends at Cua."</td></tr>
+            <tr><td class="num">May 30</td><td class="num">1.0.21</td><td>First draw-on-screen guidance: "target rings, annotations, and narration." Realtime voice becomes default.</td></tr>
+            <tr><td class="num">Jun 18</td><td class="num">1.0.25</td><td>You can draw on screen too (Ctrl+Option) to show what you mean.</td></tr>
+            <tr><td class="num">Jun 19</td><td class="num">1.0.26</td><td>Step-by-step walkthroughs, "made much smarter by skill files." "It even detects when you click where it told you to."</td></tr>
+            <tr><td class="num">Jun 23</td><td class="num">1.0.28</td><td>Teaching skills for 89 apps, with browser-site matching.</td></tr>
+            <tr><td class="num">Jul 1</td><td class="num">1.0.31</td><td>"Claude Fable 5 is now the default."</td></tr>
+            <tr><td class="num">Jul 6</td><td class="num">1.0.33</td><td>Realtime voice upgraded to gpt-realtime-2.1.</td></tr>
+            <tr><td class="num">Jul 17</td><td class="num">1.0.40</td><td>Shapes look "hand-drawn, Excalidraw-style."</td></tr>
+            <tr><td class="num">Jul 31</td><td class="num">1.0.45</td><td>"A little router decides on every question" between fast and frontier models.</td></tr>
+            <tr><td class="num">Aug 25</td><td class="num">1.0.48</td><td>Native computer-use driver; walkthroughs up to 15 steps.</td></tr>
+            <tr><td class="num">Sep 12</td><td class="num">1.0.49</td><td>"Clickys": named assistants with memory, routines, custom MCP connectors.</td></tr>
+            <tr><td class="num">Sep 24</td><td class="num">1.0.52</td><td>"Your Clickys now run on GPT-6 Luna, and deep answers use GPT-6 Sol."</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The open-source repo's last commit is April 27, 2026; the README says new work is kept private. So the code below describes v1, and everything after that is read from the changelog.</p>
+    </section>
+
+    <section id="pipeline">
+      <h2>How v1 works</h2>
+      <p><span class="chip code">code</span>From <code>CLAUDE.md</code>, <code>CompanionManager.swift</code> and <code>CompanionScreenCaptureUtility.swift</code> in <code>farzaa/clicky</code>. Each press of the hotkey runs this sequence:</p>
+      <ol class="pipeline">
+        <li><b>Hold Ctrl+Option</b><span>Listen-only CGEvent tap catches the chord system-wide.</span></li>
+        <li><b>Stream speech</b><span>AVAudioEngine → AssemblyAI realtime STT (<code>u3-rt-pro</code>). Apple Speech and OpenAI as fallbacks.</span></li>
+        <li><b>Capture every display</b><span>ScreenCaptureKit, long edge 1280 px, JPEG q0.8, Clicky's own windows excluded.</span></li>
+        <li><b>Label the images</b><span>"cursor is on this screen (primary focus)" plus "image dimensions: 1280x831 pixels".</span></li>
+        <li><b>Ask Claude</b><span>Sonnet 4.6 default (Opus optional), last 10 exchanges, SSE via a Cloudflare Worker that holds the API keys.</span></li>
+        <li><b>Parse the tag</b><span>Regex strips <code>[POINT:…]</code> from the end of the reply.</span></li>
+        <li><b>Speak</b><span>ElevenLabs <code>eleven_flash_v2_5</code> reads the reply.</span></li>
+        <li><b>Fly and point</b><span>Full-screen, non-activating NSPanel; the blue cursor flies a bezier arc to the target.</span></li>
+      </ol>
+      <p>The overlay is a transparent <code>NSPanel</code> that joins all Spaces and never takes focus. That's why you can "stay still" in your app while it draws on top.</p>
+
+      <h3>What the paid app added (read from the changelog)</h3>
+      <ul>
+        <li><span class="chip said">company</span><strong>Skill files per app</strong> (89 apps by late June). <span class="chip guess">inference</span>Most likely Markdown notes injected into the prompt based on the frontmost app or site: where the menus are, the usual workflows. That is context engineering, not training.</li>
+        <li><span class="chip said">company</span><strong>Walkthroughs that notice your click.</strong> <span class="chip guess">inference</span>A global mouse-down listener hit-tests your click against the target rectangle, then re-screenshots and asks for the next step. Plain code, no model needed for the check.</li>
+        <li><span class="chip said">company</span><strong>Hand-drawn shapes.</strong> <span class="chip guess">inference</span>The model emits geometric primitives; the renderer adds the wobble (Excalidraw uses the rough.js approach). Rendering style is independent of the model.</li>
+        <li><span class="chip said">company</span><strong>A model router</strong> picking fast vs. frontier per question. <span class="chip guess">inference</span>Cerebras in the vendor list suggests a very fast small model for routing or intent classification.</li>
+        <li><span class="chip said">company</span><strong>Computer use</strong> via Cua, then a native driver. That's the "do it for me" mode, separate from "show me where."</li>
+      </ul>
+    </section>
+
+    <section id="grounding">
+      <h2>How it knows where to draw</h2>
+      <p>This is the part you asked about. The short version is that "where" is a coordinate the model writes as text, and the rest is bookkeeping.</p>
+
+      <h3>1. The prompt contract</h3>
+      <p><span class="chip code">code</span>The voice system prompt in <code>CompanionManager.swift</code> gives Claude a coordinate system, a format and examples. Trimmed:</p>
+      <blockquote><p>"the screenshot images are labeled with their pixel dimensions. use those dimensions as the coordinate space. the origin (0,0) is the top-left corner of the image. x increases rightward, y increases downward. format: [POINT:x,y:label] … if pointing wouldn't help, append [POINT:none]."</p></blockquote>
+      <p>Then four few-shot examples, such as a Final Cut answer ending in <code>[POINT:1100,42:color inspector]</code> and a second-monitor case ending in <code>:screen2</code>. The parser is one regex anchored to the end of the reply, and the tag is stripped before the text goes to TTS and to conversation history.</p>
+
+      <h3>2. The coordinate mapping</h3>
+      <p><span class="chip code">code</span>Claude answers in screenshot pixels. Swift clamps, scales to display points, flips Y (AppKit's origin is bottom-left) and adds the display's origin for multi-monitor setups. With the repo's own example sizes:</p>
+      <div class="math">Claude says          (1100, 42)   in a 1280 × 831 image
+Display (points)     1512 × 982   (14" MacBook Pro, default scaling)
+x = 1100 × 1512/1280 = 1299.4
+y =   42 ×  982/831  =   49.6     (top-left origin)
+AppKit y = 982 − 49.6 = 932.4     then + displayFrame.origin</div>
+
+      <h3>3. The hidden second technique</h3>
+      <p><span class="chip code">code</span>The repo also ships <code>ElementLocationDetector.swift</code>, which uses Claude's <strong>computer-use tool purely as a pointing oracle</strong>. It declares a <code>computer_20251124</code> tool sized to the screenshot (1280×800 for 16:10 Macs), asks Claude to "click on that element," then reads the <code>coordinate</code> from the <code>tool_use</code> block and never clicks anything. Its comment says the tool definition "activates Claude's specialized pixel-counting training, which is significantly more accurate than regular vision API coordinate extraction." In the public version nothing calls this class, so it looks like an experiment that may live on in the private app.</p>
+      <p>It also documents a classic bug: drawing into an <code>NSImage</code> on a Retina screen silently doubles the pixel count, so the image sent no longer matches the size declared to the model and every coordinate comes back at the wrong scale.</p>
+
+      <h3>4. Where the skill really comes from</h3>
+      <p>Anthropic's computer-use write-up says: "Training Claude to count pixels accurately was critical." That training is what makes a bare prompt work. Anthropic's vision docs now cover the non-agent case too: "Claude works best with absolute pixel coordinates," and it "does not work well when you ask for normalized coordinates" such as 0–1000 (that's Gemini's convention, so don't copy prompts across vendors).</p>
+
+      <div class="verdict">
+        <p class="label">Verdict: prompting or fine-tuning?</p>
+        <p>Prompting plus deterministic code, riding on grounding that the model labs trained in. The evidence:</p>
+        <ul>
+          <li>The v1 code is a system prompt, a regex and scaling math.</li>
+          <li>The default model moved from Claude Sonnet 4.6 (April) to Claude Fable 5 (July) to GPT-6 Luna (September). A fine-tune doesn't carry across vendors, so a startup that has switched three times is very unlikely to be maintaining one.</li>
+          <li>The quality improvements on the changelog are skill files, a router, walkthrough state and click detection: context and product engineering.</li>
+        </ul>
+        <p>Fine-tuning does exist in this space, just upstream. Open GUI-grounding models (UI-TARS, Microsoft OmniParser, Holo, GTA1) are trained for exactly this, and you'd only need them for a local or free setup.</p>
+      </div>
+
+      <h3>Ways to get coordinates, compared</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Technique</th><th>How it works</th><th>Strength</th><th>Works on a Claude plan?</th></tr></thead>
+          <tbody>
+            <tr><td>Coordinate tag in reply</td><td>Model writes x,y in image pixels (Clicky v1)</td><td>One call, simple; fine for big targets</td><td>Yes</td></tr>
+            <tr><td>Computer-use tool as oracle</td><td>Declare a <code>computer</code> tool, read the proposed click</td><td>Uses the model's click training</td><td>API only</td></tr>
+            <tr><td>Zoom and refine</td><td>Coarse guess, crop around it at full res, ask again, add the crop offset</td><td>Small icons, dense UIs, 4K screens</td><td>Yes (one more call)</td></tr>
+            <tr><td>Accessibility snap</td><td>Take the model's point, ask macOS for the UI element there, use its exact frame</td><td>Pixel-perfect boxes in native apps, free</td><td>Yes</td></tr>
+            <tr><td>Set-of-Mark</td><td>Draw numbered boxes (from the accessibility tree or OmniParser) on the screenshot; model picks a number</td><td>Model chooses, code locates; very reliable</td><td>Yes</td></tr>
+            <tr><td>Dedicated grounding model</td><td>Claude describes the target in words; UI-TARS / Holo / Qwen-VL returns the point, locally</td><td>Offline, no per-call cost</td><td>Yes (Claude for "what", local for "where")</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>For a sense of scale: on ScreenSpot-Pro (professional apps at high resolution), the official leaderboard has UI-TARS-1.5 around 62%, while recent frontier models report roughly 80–90% in their own launch materials. Treat those vendor numbers as self-reported.</p>
+    </section>
+
+    <section id="subscription">
+      <h2>Why it can't use your Claude subscription</h2>
+      <p>Anthropic's Claude Code legal page spells it out:</p>
+      <blockquote><p>"OAuth authentication is intended exclusively for purchasers of Claude Free, Pro, Max, Team, and Enterprise subscription plans and is designed to support ordinary use of Claude Code and other native Anthropic applications." … "Anthropic does not permit third-party developers to offer Claude.ai login into their own applications, or to route requests through Free, Pro, or Max plan credentials on behalf of their users."</p></blockquote>
+      <p>Blocking of plan sign-in in third-party clients began January 9, 2026, and the docs were clarified on February 19, 2026. So a product like HeyClicky has to buy API tokens and resell them inside its $20/$100 plans. And since its realtime voice and default assistant now run on OpenAI, a Claude plan wouldn't cover most of its traffic regardless.</p>
+
+      <h3>What your plan can legitimately power</h3>
+      <ul>
+        <li><strong>Claude Code, including headless mode.</strong> The same page says the policy doesn't prevent "an end user from signing in to the unmodified Claude Code binary with their own Claude subscription," and <code>claude setup-token</code> exists "for CI pipelines, scripts, or other environments." A personal script that shells out to <code>claude -p</code> fits that.</li>
+        <li><strong>Claude Desktop and Claude Code with your own MCP servers.</strong> Local stdio servers are a supported feature, and Claude Code documents that image results from MCP tools are shown to Claude inline.</li>
+        <li><strong>Built-in computer use</strong> (research preview, Pro/Max, macOS in the CLI; macOS and Windows in Desktop). It's interactive only, not available with <code>-p</code>, and it acts for you rather than annotating for you.</li>
+      </ul>
+      <div class="caution">
+        <p><strong>Two gotchas.</strong> If <code>ANTHROPIC_API_KEY</code> is set in the environment, <code>claude -p</code> uses the key and bills the API instead of your plan. And <code>--bare</code> mode skips subscription login entirely. Also, advertised plan limits "assume ordinary, individual usage," so keep it personal. I'm not a lawyer; read the current terms if you plan to share this with anyone.</p>
+      </div>
+    </section>
+
+    <section id="build">
+      <h2>Build your own</h2>
+      <p>The design that keeps every option open: one small <strong>pen</strong> process that listens on <code>localhost</code> and draws whatever shapes it receives, and interchangeable <strong>brains</strong> that send it shapes. Claude via a hotkey is one brain, Claude Desktop via MCP is another, and a person or another script can post shapes too, which covers the "someone writes on my screen later" case.</p>
+
+      <div class="paths">
+        <div class="path rec">
+          <span class="tag">Path A · start here</span>
+          <h4>Hotkey + <code>claude -p</code></h4>
+          <p>Stay in your app. Hotkey screenshots, a prompt box takes your Wispr Flow dictation, Claude Code returns JSON shapes, the pen draws them. Runs on your plan.</p>
+        </div>
+        <div class="path">
+          <span class="tag">Path B</span>
+          <h4>MCP "screen pen"</h4>
+          <p>Give Claude Desktop or Claude Code two tools, <code>capture_screen</code> and <code>draw_on_screen</code>. Claude decides when to look and draw, with full conversation memory. Runs on your plan.</p>
+        </div>
+        <div class="path">
+          <span class="tag">Path C</span>
+          <h4>Fork Clicky v1</h4>
+          <p>MIT-licensed Swift app, already polished. Needs your own Anthropic API key (about a cent per question). Lowest latency and closest to the real product.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th></th><th>A · hotkey + claude -p</th><th>B · MCP pen</th><th>C · fork Clicky</th></tr></thead>
+          <tbody>
+            <tr><td>Billing</td><td>Claude plan</td><td>Claude plan</td><td>API tokens + STT/TTS vendors</td></tr>
+            <tr><td>Stay in your app</td><td>Yes</td><td>Partly; you talk in Claude's window</td><td>Yes</td></tr>
+            <tr><td>Voice in</td><td>Wispr Flow into prompt box</td><td>Wispr Flow into Claude's input</td><td>Built-in push-to-talk</td></tr>
+            <tr><td>Rough latency (estimate; measure)</td><td>Several seconds: CLI start + 2 model turns</td><td>Slower: extra tool round trips</td><td>~2–4 s, streamed</td></tr>
+            <tr><td>Follow-ups</td><td><code>--continue</code></td><td>Native</td><td>Last 10 exchanges</td></tr>
+            <tr><td>Effort</td><td>An evening (Lua + shell)</td><td>An evening (Python)</td><td>A weekend (Xcode, Cloudflare)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Path C cost math, so you can check it against current prices: a 1280×831 screenshot is about 1.4k image tokens, plus ~1k of system prompt and history, plus ~100 output tokens. At $3 per million input and $15 per million output (Sonnet's long-standing list price), that's roughly $0.009 per question.</p>
+
+      <h3>The shape format (shared by all paths)</h3>
+      <div class="codeblock">
+        <div class="cb-head"><span>~/.screenpen/schema.json</span><button class="copy" type="button">Copy</button></div>
+<pre><code>{
+  "type": "object",
+  "properties": {
+    "say":    { "type": "string" },
+    "shapes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["circle", "arrow", "box", "label"] },
+          "x":  { "type": "number" }, "y":  { "type": "number" },
+          "x2": { "type": "number" }, "y2": { "type": "number" },
+          "r":  { "type": "number" },
+          "text": { "type": "string" }
+        },
+        "required": ["kind", "x", "y"]
+      }
+    }
+  },
+  "required": ["say", "shapes"]
+}</code></pre>
+      </div>
+      <p>Conventions: all numbers are pixels in the screenshot the model saw, origin top-left. A circle is centered on (x, y). A box runs from (x, y) to (x2, y2). An arrow points <em>at</em> (x, y) from (x2, y2).</p>
+
+      <h3>Path A: the pen and the hotkey (Hammerspoon)</h3>
+      <p>Hammerspoon is a free macOS automation app scripted in Lua. Its <code>hs.canvas</code> draws borderless overlay windows, <code>hs.httpserver</code> gives the pen its localhost endpoint, and <code>hs.axuielement</code> reads the accessibility tree for snapping. Grant it Accessibility and Screen Recording. These are starter sketches that I haven't run on a Mac, so expect to debug a line or two.</p>
+      <div class="codeblock">
+        <div class="cb-head"><span>~/.screenpen/ask.sh · the brain (chmod +x)</span><button class="copy" type="button">Copy</button></div>
+<pre><code>#!/bin/bash
+# usage: ask.sh &lt;screenshot.png&gt; "&lt;question&gt;"   -&gt; prints shape JSON
+set -euo pipefail
+unset ANTHROPIC_API_KEY                       # use the subscription login, not API billing
+DIR="$HOME/.screenpen"; SHOT="$1"; Q="$2"
+sips -Z 1280 "$SHOT" &gt;/dev/null               # long edge -&gt; 1280 px, aspect kept
+W=$(sips -g pixelWidth  "$SHOT" | awk '/pixelWidth/{print $2}')
+H=$(sips -g pixelHeight "$SHOT" | awk '/pixelHeight/{print $2}')
+cd "$DIR"                                     # screenshot lives here, so Read needs no prompt
+claude -p "Screenshot file: $SHOT. It is ${W}x${H} pixels, origin top-left.
+The user is looking at this screen and asked: \"$Q\"
+Read the screenshot, then answer in one or two spoken sentences (field: say)
+and give shapes to draw, in this image's pixel coordinates (field: shapes).
+Point at the center of the exact control. Use at most 3 shapes.
+Return an empty shapes list if nothing on screen is relevant." \
+  --model sonnet --max-turns 3 --allowedTools Read \
+  --output-format json --json-schema "$(cat "$DIR/schema.json")" \
+| jq -c --argjson w "$W" --argjson h "$H" '.structured_output + {imgW: $w, imgH: $h}'</code></pre>
+      </div>
+      <div class="codeblock">
+        <div class="cb-head"><span>~/.hammerspoon/init.lua · the pen + hotkey</span><button class="copy" type="button">Copy</button></div>
+<pre><code>local DIR, ASK = os.getenv("HOME") .. "/.screenpen", os.getenv("HOME") .. "/.screenpen/ask.sh"
+local SHOT = DIR .. "/screen.png"
+local pen, shotScreen = nil, nil
+local voice = hs.speech.new()
+local BLUE = { red = 0.12, green = 0.33, blue = 0.94, alpha = 0.95 }
+
+local escKey
+local function clearPen()
+  if pen then pen:delete(); pen = nil end
+  if escKey then escKey:disable() end
+end
+escKey = hs.hotkey.new({}, "escape", clearPen)
+
+local function arrowHead(x, y, fx, fy)
+  local a, L = math.atan(y - fy, x - fx), 16
+  return { { x = x - L * math.cos(a - 0.5), y = y - L * math.sin(a - 0.5) }, { x = x, y = y },
+           { x = x - L * math.cos(a + 0.5), y = y - L * math.sin(a + 0.5) } }
+end
+
+-- result = { say, shapes, imgW, imgH } in screenshot pixels
+local function draw(result)
+  clearPen()
+  local f = (shotScreen or hs.screen.primaryScreen()):fullFrame()   -- points, top-left origin
+  local sx, sy = f.w / result.imgW, f.h / result.imgH
+  pen = hs.canvas.new(f):level(hs.canvas.windowLevels.overlay)
+          :behavior({ "canJoinAllSpaces", "stationary" })
+  for _, s in ipairs(result.shapes or {}) do
+    local x, y = s.x * sx, s.y * sy
+    if s.kind == "circle" then
+      pen:appendElements({ type = "circle", action = "stroke", strokeColor = BLUE, strokeWidth = 4,
+        center = { x = x, y = y }, radius = (s.r or 28) * sx })
+    elseif s.kind == "box" and s.x2 then
+      pen:appendElements({ type = "rectangle", action = "stroke", strokeColor = BLUE, strokeWidth = 4,
+        roundedRectRadii = { xRadius = 8, yRadius = 8 },
+        frame = { x = x, y = y, w = (s.x2 - s.x) * sx, h = (s.y2 - s.y) * sy } })
+    elseif s.kind == "arrow" and s.x2 then
+      local fx, fy = s.x2 * sx, s.y2 * sy
+      pen:appendElements({ type = "segments", action = "stroke", strokeColor = BLUE, strokeWidth = 4,
+        coordinates = { { x = fx, y = fy }, { x = x, y = y } } })
+      pen:appendElements({ type = "segments", action = "stroke", strokeColor = BLUE, strokeWidth = 4,
+        coordinates = arrowHead(x, y, fx, fy) })
+    end
+    if s.text then
+      pen:appendElements({ type = "text", text = s.text, textColor = BLUE, textSize = 18,
+        frame = { x = x + 18, y = y + 14, w = 360, h = 26 } })
+    end
+  end
+  pen:canvasMouseEvents(false, false, false, false)   -- keep clicks passing through
+  pen:show()
+  escKey:enable()                                       -- Esc clears, only while drawn
+  if result.say and result.say ~= "" then voice:speak(result.say) end
+end
+
+-- the pen also listens locally, so MCP tools, scripts or a person can draw
+penServer = hs.httpserver.new(false, false)
+penServer:setInterface("localhost")
+penServer:setPort(7777)
+penServer:setCallback(function(method, path, _, body)
+  if method == "POST" and path == "/draw" then
+    local ok, result = pcall(hs.json.decode, body)
+    if ok and result then
+      hs.timer.doAfter(0, function() shotScreen = nil; draw(result) end)
+      return "ok", 200, {}
+    end
+  end
+  return "bad request", 400, {}
+end)
+penServer:start()
+
+-- Ctrl+Option+Space: screenshot first, then ask (dictate with Wispr Flow into the box)
+hs.hotkey.bind({ "ctrl", "alt" }, "space", function()
+  clearPen()
+  shotScreen = hs.mouse.getCurrentScreen()
+  shotScreen:snapshot():saveToFile(SHOT)
+  hs.focus()
+  local button, question = hs.dialog.textPrompt("Ask about your screen", "", "", "Ask", "Cancel")
+  if button ~= "Ask" or question == "" then return end
+  hs.alert.show("looking…")
+  hs.task.new(ASK, function(code, out, err)
+    if code ~= 0 then hs.alert.show("screenpen failed: " .. (err or "")); return end
+    draw(hs.json.decode(out))
+  end, { SHOT, question }):start()
+end)</code></pre>
+      </div>
+      <p>For follow-up questions, add <code>--continue</code> to the <code>claude -p</code> call so it resumes the last conversation in that folder.</p>
+
+      <h3>Path B: an MCP "screen pen" for Claude Desktop or Claude Code</h3>
+      <p>Same pen, different brain. Claude calls <code>capture_screen</code>, sees the image, and calls <code>draw_on_screen</code>, which posts to the Hammerspoon pen. This uses the Python MCP SDK (<code>pip install "mcp[cli]"</code>).</p>
+      <div class="codeblock">
+        <div class="cb-head"><span>~/.screenpen/screenpen_mcp.py</span><button class="copy" type="button">Copy</button></div>
+<pre><code>import json, subprocess, urllib.request
+from mcp.server.fastmcp import FastMCP, Image
+
+mcp = FastMCP("screenpen")
+SHOT = "/tmp/screenpen.png"
+last_size = {"w": 1280, "h": 800}
+
+@mcp.tool()
+def capture_screen() -&gt; list:
+    """Screenshot of the user's main display, long edge resized to 1280 px.
+    Coordinates for draw_on_screen are pixels in THIS image, origin top-left."""
+    subprocess.run(["screencapture", "-x", "-m", SHOT], check=True)
+    subprocess.run(["sips", "-Z", "1280", SHOT], check=True, capture_output=True)
+    out = subprocess.run(["sips", "-g", "pixelWidth", "-g", "pixelHeight", SHOT],
+                         capture_output=True, text=True, check=True).stdout.split()
+    last_size["w"] = int(out[out.index("pixelWidth:") + 1])
+    last_size["h"] = int(out[out.index("pixelHeight:") + 1])
+    return [Image(path=SHOT), f"Image is {last_size['w']}x{last_size['h']} px."]
+
+@mcp.tool()
+def draw_on_screen(shapes: list[dict], say: str = "") -&gt; str:
+    """Draw over the user's screen. Each shape: {kind: circle|arrow|box|label,
+    x, y, x2?, y2?, r?, text?} in capture_screen pixel coordinates.
+    Circle is centered on x,y; box is x,y to x2,y2; arrow points at x,y from x2,y2."""
+    payload = {"shapes": shapes, "say": say, "imgW": last_size["w"], "imgH": last_size["h"]}
+    req = urllib.request.Request("http://127.0.0.1:7777/draw", json.dumps(payload).encode(),
+                                 {"Content-Type": "application/json"})
+    urllib.request.urlopen(req, timeout=5)
+    return "Drawn. The user can press Esc to clear it."
+
+if __name__ == "__main__":
+    mcp.run()</code></pre>
+      </div>
+      <p>Register it with Claude Code via <code>claude mcp add screenpen -- python3 ~/.screenpen/screenpen_mcp.py</code>, or add the same command under <code>mcpServers</code> in <code>claude_desktop_config.json</code>. macOS will ask to grant Screen Recording to whichever app launched the server (Claude, or your terminal). Claude Code documents that MCP image results reach the model inline; Desktop is documented to load the same local servers, but I couldn't confirm in its docs that it passes images through the same way, so test that first. This path captures the main display only; use <code>screencapture -D 2</code> or per-screen snapshots for others.</p>
+
+      <h3>Path C: fork Clicky v1</h3>
+      <ol>
+        <li>Clone <code>farzaa/clicky</code>, deploy the <code>worker/</code> to Cloudflare with your Anthropic key. You can drop AssemblyAI and ElevenLabs: the repo already has Apple Speech as a transcription provider, and macOS <code>say</code> or <code>AVSpeechSynthesizer</code> can replace TTS.</li>
+        <li>Swap the regex tag for a JSON shape list (above), so you get circles, boxes and arrows instead of a single point.</li>
+        <li>Wire in the unused <code>ElementLocationDetector</code> as a second pass for small targets, or add accessibility snapping.</li>
+        <li>Don't run <code>xcodebuild</code> from the terminal; the repo notes it resets the app's macOS permissions.</li>
+      </ol>
+    </section>
+
+    <section id="wispr">
+      <h2>Using Wispr Flow instead of their speech stack</h2>
+      <p>Wispr Flow's job is to type cleaned-up speech into whatever text field has focus. That makes it a drop-in replacement for Clicky's AssemblyAI pipeline as long as your brain has a focused text box:</p>
+      <ul>
+        <li><strong>Path A:</strong> the hotkey opens <code>hs.dialog.textPrompt</code>, which has keyboard focus. Hold your Flow key, speak, release, press Return. Nothing to integrate.</li>
+        <li><strong>Path B:</strong> dictate straight into Claude Desktop's input or Claude Code's prompt. Flow's May 2026 update stopped long dictations collapsing into "[Pasted N lines]" in Claude Code and Codex.</li>
+        <li><strong>Order matters.</strong> Take the screenshot before the prompt box appears, or exclude your own windows from capture (Clicky does this with <code>SCContentFilter</code>), or the box will cover what you're asking about.</li>
+        <li><strong>Hotkeys.</strong> Pick a capture chord that doesn't collide with Flow's push-to-talk key. Flow can toggle hands-free mode with a double-tap, and any non-primary mouse button can trigger dictation, so a mouse button can be your "talk" key.</li>
+        <li><strong>Programmatic route.</strong> Wispr does publish a voice API (WebSocket <code>/ws</code> and REST <code>/api</code>), but its docs don't say it's included with a consumer plan, so I wouldn't count on your Flow subscription for it. You don't need it for any of the paths above.</li>
+        <li><strong>Voice out.</strong> <code>hs.speech</code> or macOS <code>say</code> is free and instant. Upgrade only if the voice bothers you.</li>
+      </ul>
+    </section>
+
+    <section id="accuracy">
+      <h2>Accuracy recipe</h2>
+      <p>Most "it pointed at the wrong thing" bugs are bookkeeping, not model quality. In rough order of payoff:</p>
+      <ol>
+        <li><strong>Resize the screenshot yourself</strong> to a size under the model's limit (1280 on the long edge is safe) and state the exact pixel size in the prompt. Then the image you have is the image the model saw, and coordinates need one scale factor. Anthropic's vision docs recommend exactly this.</li>
+        <li><strong>Ask for absolute pixel coordinates</strong> from Claude. Don't use the 0–1000 normalized convention; Anthropic says Claude does worse with it.</li>
+        <li><strong>Keep points and pixels straight.</strong> Retina screenshots are 2× the display's point size; overlays draw in points. Multi-monitor needs the display's origin added. Hammerspoon uses a top-left origin; raw AppKit uses bottom-left.</li>
+        <li><strong>Snap to the real control.</strong> Before drawing, ask macOS which element sits under the model's point (<code>hs.axuielement.systemElementAtPosition(x, y)</code>, then its <code>AXFrame</code>) and draw a box around that frame. Ignore huge frames (that's a container, not a button). Free, and pixel-exact in native apps.</li>
+        <li><strong>Zoom for small targets.</strong> If the first guess lands on a dense toolbar, crop ~400×300 around it from the full-resolution capture, ask again, and add the crop's offset.</li>
+        <li><strong>One target per step.</strong> For multi-step help, draw step 1 only, wait for the user's click inside that rectangle (an <code>hs.eventtap</code> mouse-down listener), re-screenshot, then ask for step 2. That's how you get Clicky's "detects when you click where it told you to."</li>
+        <li><strong>Add per-app notes.</strong> A short Markdown file per app you use often ("in Figma, Auto layout lives in the right panel…") appended to the prompt based on the frontmost app. That's the cheap version of Clicky's skill files.</li>
+        <li><strong>Exclude your own overlay</strong> from screenshots so the model doesn't point at its previous drawing.</li>
+      </ol>
+    </section>
+
+    <section id="plan">
+      <h2>Suggested build plan</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Milestone</th><th>What you'll have</th><th>Check</th></tr></thead>
+          <tbody>
+            <tr><td>1 · Pen only</td><td>Hammerspoon pen listening on <code>localhost:7777</code></td><td><code>curl -d '{"imgW":1280,"imgH":800,"shapes":[{"kind":"circle","x":640,"y":400}]}' localhost:7777/draw</code> draws a circle mid-screen</td></tr>
+            <tr><td>2 · Brain</td><td><code>ask.sh</code> returns shape JSON from a saved screenshot</td><td>Run it by hand on a screenshot of a known app; eyeball the coordinates</td></tr>
+            <tr><td>3 · Loop</td><td>Hotkey → screenshot → Flow dictation → drawing + speech</td><td>Ask "where's the export button" in three different apps</td></tr>
+            <tr><td>4 · Snap</td><td>Accessibility snapping and zoom-refine</td><td>Small toolbar icons get tight boxes</td></tr>
+            <tr><td>5 · MCP</td><td>Same pen driven from Claude Desktop or Claude Code</td><td>Claude chooses to look and draw mid-conversation</td></tr>
+            <tr><td>6 · Walkthroughs</td><td>Click detection and step-by-step state</td><td>A 4-step task advances only when you click the right thing</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="sources" class="sources">
+      <h2>Sources</h2>
+      <ol>
+        <li><a href="https://www.heyclicky.com/" target="_blank" rel="noopener">heyclicky.com</a> · <a href="https://www.heyclicky.com/changelog" target="_blank" rel="noopener">changelog</a> · <a href="https://www.heyclicky.com/trust" target="_blank" rel="noopener">trust</a> · <a href="https://www.heyclicky.com/privacy-policy" target="_blank" rel="noopener">privacy policy</a></li>
+        <li><a href="https://github.com/farzaa/clicky" target="_blank" rel="noopener">github.com/farzaa/clicky</a> (README, CLAUDE.md, CompanionManager.swift, ElementLocationDetector.swift, CompanionScreenCaptureUtility.swift; commit a80fa80, Apr 27, 2026)</li>
+        <li><a href="https://github.com/Bitshank-2338/clicky-windows" target="_blank" rel="noopener">clicky-windows</a> (community Windows port; grid-based two-stage locator)</li>
+        <li><a href="https://dailydropout.substack.com/p/heyclicky-give-your-cursor-infinite" target="_blank" rel="noopener">DailyDropout.FYI: HeyClicky profile</a> (June 9, 2026)</li>
+        <li><a href="https://www.anthropic.com/news/developing-computer-use" target="_blank" rel="noopener">Anthropic: Developing a computer use model</a></li>
+        <li><a href="https://platform.claude.com/docs/en/build-with-claude/vision-coordinates" target="_blank" rel="noopener">Claude docs: coordinates and bounding boxes</a> · <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/computer-use-tool" target="_blank" rel="noopener">computer use tool</a></li>
+        <li><a href="https://code.claude.com/docs/en/legal-and-compliance" target="_blank" rel="noopener">Claude Code: legal and compliance</a> · <a href="https://code.claude.com/docs/en/headless" target="_blank" rel="noopener">headless mode</a> · <a href="https://code.claude.com/docs/en/cli-reference" target="_blank" rel="noopener">CLI reference</a> · <a href="https://code.claude.com/docs/en/authentication" target="_blank" rel="noopener">authentication</a> · <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener">MCP</a> · <a href="https://code.claude.com/docs/en/computer-use" target="_blank" rel="noopener">computer use</a></li>
+        <li><a href="https://winbuzzer.com/2026/02/19/anthropic-bans-claude-subscription-oauth-in-third-party-apps-xcxwbn/" target="_blank" rel="noopener">WinBuzzer: Anthropic bans subscription OAuth in third-party apps</a> (Feb 19, 2026)</li>
+        <li><a href="https://api-docs.wisprflow.ai/" target="_blank" rel="noopener">Wispr Flow API docs</a> · <a href="https://wisprflow.ai/whats-new" target="_blank" rel="noopener">Wispr Flow: what's new</a></li>
+        <li><a href="https://arxiv.org/abs/2310.11441" target="_blank" rel="noopener">Set-of-Mark prompting (arXiv 2310.11441)</a> · <a href="https://github.com/microsoft/OmniParser" target="_blank" rel="noopener">Microsoft OmniParser</a> · <a href="https://arxiv.org/abs/2501.12326" target="_blank" rel="noopener">UI-TARS (arXiv 2501.12326)</a></li>
+        <li><a href="https://github.com/likaixin2000/ScreenSpot-Pro-GUI-Grounding" target="_blank" rel="noopener">ScreenSpot-Pro</a> · <a href="https://benchmarklist.com/benchmarks/screenspot_pro/" target="_blank" rel="noopener">aggregated scores</a> (mixed self-reported)</li>
+        <li><a href="https://www.hammerspoon.org/docs/hs.canvas.html" target="_blank" rel="noopener">Hammerspoon hs.canvas</a> · <a href="https://www.hammerspoon.org/docs/hs.httpserver.html" target="_blank" rel="noopener">hs.httpserver</a> · <a href="https://www.hammerspoon.org/docs/hs.axuielement.html" target="_blank" rel="noopener">hs.axuielement</a></li>
+      </ol>
+      <footer>Facts checked October 8, 2026. Everything after the April 27 open-source commit is read from the company's own changelog. Code sketches are untested starting points.</footer>
+    </section>
+  </main>
+</div>
+
+<script>
+document.querySelectorAll('.codeblock').forEach(function (block) {
+  var btn = block.querySelector('.copy');
+  var code = block.querySelector('pre code');
+  if (!btn || !code) return;
+  btn.addEventListener('click', function () {
+    var text = code.innerText;
+    var done = function () { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy'; }, 1400); };
+    var fallback = function () {
+      var range = document.createRange();
+      range.selectNodeContents(code);
+      var sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      btn.textContent = 'Selected, press ⌘C';
+      setTimeout(function () { btn.textContent = 'Copy'; }, 2200);
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+  });
+});
+</script>
+
+</body>
+</html>

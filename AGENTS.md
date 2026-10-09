@@ -3,6 +3,23 @@
 <!-- This is the single source of truth for all AI coding agents. CLAUDE.md is a symlink to this file. -->
 <!-- AGENTS.md spec: https://github.com/agentsmd/agents.md — supported by Claude Code, Cursor, Copilot, Gemini CLI, and others. -->
 
+## Fork context (read first)
+
+This is **Ayaan's personal, public fork** of `farzaa/clicky`. Upstream is the `upstream` remote; the fork is `origin`.
+Goal: a hands-free screen companion. "Hey Clicky" → capture + semi-gray dim of the captured screen → Wispr Flow dictation → a persistent **Claude Code session** via a Claude Code **channel** → spoken answer + drawings, or actions in Chrome with spoken confirmation.
+
+- Start here: `docs/fork/README.md` → `PRODUCT.md` → `ARCHITECTURE.md` → `CONTRACTS.md`. Kickoff prompt for the lead session: `kickoff.md`.
+- Work is split into workstreams (`docs/fork/workstreams/WS1…WS6`), built by subagents in separate git worktrees.
+
+Fork rules (these extend the upstream rules below; where they differ, these win):
+
+- **Public repo:** never commit API keys, tokens, `~/.clicky/*`, screenshots of the user's screen, or personal info.
+- **Shared files are lead-only:** `CompanionManager.swift`, `OverlayWindow.swift`, `CompanionPanelView.swift`, `leanring_buddyApp.swift`, `Info.plist`, `project.pbxproj`. Workstreams add new files; the app target uses a file-system-synchronized group, so new Swift files in `leanring-buddy/` need no project-file edits.
+- **Compile-only checks are allowed:** `xcodebuild -project leanring-buddy.xcodeproj -scheme leanring-buddy -configuration Debug -derivedDataPath build/agent-check CODE_SIGNING_ALLOWED=NO build`. Never launch that build, and never run the signed app from the terminal; the user runs and permission-tests from Xcode. (The upstream "do not run xcodebuild" rule below still applies to signed builds.)
+- Scripts that launch `claude` must `unset ANTHROPIC_API_KEY` and must not use `--bare`.
+- `docs/fork/CONTRACTS.md` defines the interfaces between workstreams; change it only on `main`.
+- Upstream PostHog analytics must stay disabled in this fork.
+
 ## Overview
 
 macOS menu bar companion app. Lives entirely in the macOS status bar (no dock icon, no main window). Clicking the menu bar icon opens a custom floating panel with companion voice controls. Uses push-to-talk (ctrl+option) to capture voice input, transcribes it via AssemblyAI streaming, and sends the transcript + a screenshot of the user's screen to Claude. Claude responds with text (streamed via SSE) and voice (ElevenLabs TTS). A blue cursor overlay can fly to and point at UI elements Claude references on any connected monitor.
