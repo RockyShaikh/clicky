@@ -21,6 +21,7 @@ struct CompanionPanelView: View {
     @AppStorage(BrainTransportPreference.userDefaultsKey) private var brainTransportPreferenceRawValue = BrainTransportPreference.defaultPreference.rawValue
     @AppStorage(VoiceInputCoordinator.voiceInputSourceUserDefaultsKey) private var voiceInputSourceRawValue = "wisprFlow"
     @AppStorage(HandsFreeSettingsKeys.wakeWordEnabled) private var isWakeWordEnabled = true
+    @AppStorage(ClickyMicrophoneSource.userDefaultsKey) private var microphoneSourceRawValue = ClickyMicrophoneSource.automatic.rawValue
     @AppStorage(HandsFreeSettingsKeys.wakeWordSensitivity) private var wakeWordSensitivity = 0.5
     @AppStorage(CaptureDimLayerState.dimOpacityPercentUserDefaultsKey) private var dimOpacityPercent = CaptureDimLayerState.defaultDimOpacityPercent
     @AppStorage(RequestScreenCaptureService.captureAllScreensUserDefaultsKey) private var shouldCaptureAllScreens = false
@@ -726,6 +727,13 @@ struct CompanionPanelView: View {
                 title: "Voice input",
                 choices: [("Wispr Flow", "wisprFlow"), ("Apple Speech", "appleSpeech")],
                 selectedValue: $voiceInputSourceRawValue
+            )
+
+            // Automatic avoids switching Bluetooth headphones to their low-quality headset profile.
+            settingsChoiceRow(
+                title: "Microphone",
+                choices: [("Automatic", "automatic"), ("Built-in", "builtIn"), ("System default", "systemDefault")],
+                selectedValue: $microphoneSourceRawValue
             )
 
             HStack {

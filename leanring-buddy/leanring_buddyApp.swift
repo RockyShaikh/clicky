@@ -37,6 +37,7 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
         print("🎯 Clicky: Starting...")
         print("🎯 Clicky: Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown")")
 
+        SingleInstanceGuard.terminateOtherRunningInstances()
         UserDefaults.standard.register(defaults: ["NSInitialToolTipDelay": 0])
 
         ClickyAnalytics.configure()

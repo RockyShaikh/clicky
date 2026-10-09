@@ -163,6 +163,7 @@ final class EndOfSpeechDetector {
         hasReportedOutcome = false
         sharedStateLock.unlock()
 
+        ClickyMicrophoneInputSelector.applyPreferredInputDevice(to: audioEngine)
         let inputNode = audioEngine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
