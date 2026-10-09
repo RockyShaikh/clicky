@@ -13,18 +13,38 @@ enum ClickyAnalytics {
 
     // MARK: - Setup
 
+    /// Master switch. This fork ships with analytics off so nothing is sent to
+    /// upstream's PostHog project. To enable it, set this to true AND supply
+    /// your own key via `posthogProjectAPIKey` (never commit a key).
+    static let isAnalyticsEnabled = false
+
+    /// Intentionally empty: the upstream key was removed from source. Even if
+    /// `isAnalyticsEnabled` is flipped, setup is skipped while this is empty.
+    private static let posthogProjectAPIKey = ""
+
+    private static var isPostHogReadyToCapture = false
+
     static func configure() {
+        guard isAnalyticsEnabled, !posthogProjectAPIKey.isEmpty else { return }
         let config = PostHogConfig(
-            apiKey: "phc_xcQPygmhTMzzYh8wNW92CCwoXmnzqyChAixh8zgpqC3C",
+            apiKey: posthogProjectAPIKey,
             host: "https://us.i.posthog.com"
         )
         PostHogSDK.shared.setup(config)
+        isPostHogReadyToCapture = true
+    }
+
+    /// Associates events with the user's email. No-op while analytics is disabled.
+    static func identifyUser(email: String) {
+        guard isPostHogReadyToCapture else { return }
+        PostHogSDK.shared.identify(email, userProperties: ["email": email])
     }
 
     // MARK: - App Lifecycle
 
     /// Fired once on every app launch in applicationDidFinishLaunching.
     static func trackAppOpened() {
+        guard isPostHogReadyToCapture else { return }
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
         PostHogSDK.shared.capture("app_opened", properties: [
             "app_version": version
@@ -35,21 +55,25 @@ enum ClickyAnalytics {
 
     /// User clicked the Start button to begin onboarding for the first time.
     static func trackOnboardingStarted() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("onboarding_started")
     }
 
     /// User clicked "Watch Onboarding Again" from the panel footer.
     static func trackOnboardingReplayed() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("onboarding_replayed")
     }
 
     /// The onboarding video finished playing to the end.
     static func trackOnboardingVideoCompleted() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("onboarding_video_completed")
     }
 
     /// The 40s onboarding demo interaction where Clicky points at something.
     static func trackOnboardingDemoTriggered() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("onboarding_demo_triggered")
     }
 
@@ -57,11 +81,13 @@ enum ClickyAnalytics {
 
     /// All three permissions (accessibility, screen recording, mic) are granted.
     static func trackAllPermissionsGranted() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("all_permissions_granted")
     }
 
     /// A single permission was granted. Called when polling detects a change.
     static func trackPermissionGranted(permission: String) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("permission_granted", properties: [
             "permission": permission
         ])
@@ -71,16 +97,19 @@ enum ClickyAnalytics {
 
     /// User pressed the push-to-talk shortcut (control+option) to start talking.
     static func trackPushToTalkStarted() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("push_to_talk_started")
     }
 
     /// User released the shortcut — transcript is being finalized.
     static func trackPushToTalkReleased() {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("push_to_talk_released")
     }
 
     /// Transcription completed and the user's message is being sent to the AI.
     static func trackUserMessageSent(transcript: String) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("user_message_sent", properties: [
             "transcript": transcript,
             "character_count": transcript.count
@@ -89,6 +118,7 @@ enum ClickyAnalytics {
 
     /// Claude responded and the response is being spoken via TTS.
     static func trackAIResponseReceived(response: String) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("ai_response_received", properties: [
             "response": response,
             "character_count": response.count
@@ -98,6 +128,7 @@ enum ClickyAnalytics {
     /// Claude's response included a [POINT:x,y:label] coordinate tag,
     /// so the buddy is flying to point at a UI element.
     static func trackElementPointed(elementLabel: String?) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("element_pointed", properties: [
             "element_label": elementLabel ?? "unknown"
         ])
@@ -107,6 +138,7 @@ enum ClickyAnalytics {
 
     /// An error occurred during the AI response pipeline.
     static func trackResponseError(error: String) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("response_error", properties: [
             "error": error
         ])
@@ -114,6 +146,7 @@ enum ClickyAnalytics {
 
     /// An error occurred during TTS playback.
     static func trackTTSError(error: String) {
+        guard isPostHogReadyToCapture else { return }
         PostHogSDK.shared.capture("tts_error", properties: [
             "error": error
         ])

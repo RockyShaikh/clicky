@@ -158,9 +158,7 @@ final class CompanionManager: ObservableObject {
         UserDefaults.standard.set(true, forKey: "hasSubmittedEmail")
 
         // Identify user in PostHog
-        PostHogSDK.shared.identify(trimmedEmail, userProperties: [
-            "email": trimmedEmail
-        ])
+        ClickyAnalytics.identifyUser(email: trimmedEmail)
 
         // Submit to FormSpark
         Task {
