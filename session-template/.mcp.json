@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "clicky": {
+      "command": "node",
+      "args": ["__CLICKY_REPO__/bridge/clicky-channel/dist/index.js"]
+    }
+  }
+}
