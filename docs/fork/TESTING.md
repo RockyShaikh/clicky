@@ -30,8 +30,8 @@ Events, in order: `wake` (trigger fired), `capture_done` (screenshots written), 
 1. Xcode installed; open `leanring-buddy.xcodeproj`, set the signing team (stable signing keeps permissions), Cmd+R.
 2. Grant in System Settings > Privacy & Security: Screen Recording, Accessibility (and Input Monitoring if prompted), Microphone, Speech Recognition. After granting Screen Recording, quit and relaunch from Xcode.
 3. Wispr Flow installed, running, and configured for the dedicated Clicky trigger (per WS2 spike notes).
-4. Start the session: `scripts/clicky-session.sh` (once WS3 lands). Confirm `curl -H "Authorization: Bearer $(cat ~/.clicky/bridge-token)" localhost:8977/v1/health` reports `channel_registered: true`.
-5. Verify `ANTHROPIC_API_KEY` is unset in the session's shell (otherwise API billing instead of plan) and that Claude Code was not launched with `--bare`.
+4. One time: `scripts/clicky-session.sh login`, then `/login` with the **personal Pro** account (not the Team org) and `/exit`. Clicky uses `CLAUDE_CONFIG_DIR` (default `~/.claude-personal`, override with `CLICKY_CLAUDE_CONFIG_DIR`) for every `claude` it starts. Then start the session: `scripts/clicky-session.sh start`; `scripts/clicky-session.sh status` shows the config dir and login state. Confirm `curl -H "Authorization: Bearer $(cat ~/.clicky/bridge-token)" localhost:8977/v1/health` reports `channel_registered: true`.
+5. Verify `ANTHROPIC_API_KEY` is unset in the session's shell (otherwise API billing instead of plan) and that Claude Code was not launched with `--bare`. In the session, `/status` must show the personal Pro account, never the Team org.
 
 ## Manual E2E checklist
 
@@ -79,7 +79,7 @@ Mark each: pass / fail / notes. Record failures in `QA-LOG.md`.
 - [ ] **Password manager frontmost:** summon skips capture (denylist).
 - [ ] **Claude busy:** a second ask while one is running supersedes the older one.
 
-### Team-plan channel check (Ayaan's org)
+### Team-plan channel check (personal Pro; the Team org is blocked and must see no traffic)
 - [ ] Run `/status` in the session: logged in via `/login` (not an API key or `setup-token`).
 - [ ] Session started with `--dangerously-load-development-channels server:clicky`; the warning dialog is accepted.
 - [ ] `/v1/health` shows `channel_registered: true` and an ask results in a `respond` event.

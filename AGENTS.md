@@ -16,7 +16,7 @@ Fork rules (these extend the upstream rules below; where they differ, these win)
 - **Public repo:** never commit API keys, tokens, `~/.clicky/*`, screenshots of the user's screen, or personal info.
 - **Shared files are lead-only:** `CompanionManager.swift`, `OverlayWindow.swift`, `CompanionPanelView.swift`, `leanring_buddyApp.swift`, `Info.plist`, `project.pbxproj`. Workstreams add new files; the app target uses a file-system-synchronized group, so new Swift files in `leanring-buddy/` need no project-file edits.
 - **Compile-only checks are allowed:** `xcodebuild -project leanring-buddy.xcodeproj -scheme leanring-buddy -configuration Debug -derivedDataPath build/agent-check CODE_SIGNING_ALLOWED=NO build`. Never launch that build, and never run the signed app from the terminal; the user runs and permission-tests from Xcode. (The upstream "do not run xcodebuild" rule below still applies to signed builds.)
-- Scripts that launch `claude` must `unset ANTHROPIC_API_KEY` and must not use `--bare`.
+- Scripts that launch `claude` must `unset ANTHROPIC_API_KEY`, must not use `--bare`, and must set `CLAUDE_CONFIG_DIR` to the personal config dir (default `$HOME/.claude-personal`, env `CLICKY_CLAUDE_CONFIG_DIR`) so no Clicky traffic reaches the Team login. The app does the same for child processes (`ClickyClaudeConfiguration`).
 - `docs/fork/CONTRACTS.md` defines the interfaces between workstreams; change it only on `main`.
 - Upstream PostHog analytics must stay disabled in this fork.
 
