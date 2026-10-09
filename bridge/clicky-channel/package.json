@@ -1,0 +1,22 @@
+{
+  "name": "clicky-channel",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Claude Code channel server for Clicky: HTTP+SSE for the app, MCP tools for Claude.",
+  "main": "dist/index.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsc -p tsconfig.test.json && node --test dist-test/test/",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0"
+  }
+}
