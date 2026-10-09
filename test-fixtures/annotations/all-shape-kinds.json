@@ -1,0 +1,17 @@
+{
+  "request_id": "r_fixture0001",
+  "say": "Here is every shape kind.",
+  "screen_index": 1,
+  "image_width_px": 1280,
+  "image_height_px": 831,
+  "shapes": [
+    { "kind": "circle", "x": 1100, "y": 42, "r": 28, "label": "color inspector", "emphasis": "primary" },
+    { "kind": "box", "x": 900, "y": 30, "x2": 1180, "y2": 56, "label": "toolbar", "emphasis": "primary" },
+    { "kind": "arrow", "x": 1100, "y": 42, "from_x": 950, "from_y": 160, "label": "" },
+    { "kind": "label", "x": 640, "y": 300, "text": "click here first" },
+    { "kind": "path", "points": [[100,200],[180,205],[260,200]], "label": "underline" },
+    { "kind": "highlight", "x": 200, "y": 300, "x2": 600, "y2": 340 }
+  ],
+  "expect_click": false,
+  "final": true
+}
