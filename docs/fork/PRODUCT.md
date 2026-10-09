@@ -46,9 +46,12 @@ Other context:
 
 Windows; notarized distribution; multiple users; selling it; always-on screen watching (we only capture on summon).
 
-## Open questions (lead asks Ayaan in Phase 0)
+## Open questions / decisions (lead asks Ayaan in Phase 0)
 
-1. Is Ayaan an **Owner** of the Team org? Channels are blocked on Team plans until an Owner enables them (Organization settings → Claude Code → Channels). If not, use the personal plan for the session or the headless fallback.
+1. **Decided:** Ayaan's main Claude Code login is a **Team plan** and he is **not an Owner**, so channels are blocked there, and no Clicky traffic may go to the Team org. Every `claude` process Clicky starts (session script and headless transport) runs on his **personal Pro** login via a separate config dir, `CLAUDE_CONFIG_DIR` (default `$HOME/.claude-personal`; override with env `CLICKY_CLAUDE_CONFIG_DIR` for scripts or the `clickyClaudeConfigDirectory` UserDefaults key for the app). If that dir is missing or logged out, Clicky reports the brain unavailable instead of using the default login. One-time: `scripts/clicky-session.sh login`.
+   (Original question: is Ayaan an **Owner** of the Team org? Channels are blocked on Team plans until an Owner enables them (Organization settings → Claude Code → Channels). If not, use the personal plan for the session or the headless fallback.)
 2. Apple Developer **Team ID** for signing (stable signing keeps macOS permissions from resetting).
 3. Which **Wispr Flow shortcut** to dedicate to Clicky (the spike in WS2 decides what's synthesizable).
 4. OK to keep the **microphone open** for the wake word? (macOS shows the orange mic dot.)
+5. **Decided:** bundle ID is `com.rockyshaikh.clicky`.
+6. **Decided:** the fork lives at github.com/RockyShaikh/clicky.

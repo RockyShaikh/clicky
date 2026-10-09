@@ -78,6 +78,9 @@ final class HandsFreeSessionCoordinator: ObservableObject {
     private let brainTransportSelector: BrainTransportSelector
     private let userDefaults: UserDefaults
     private let clickTargetWatcher = ClickTargetWatcher()
+    /// Esc tap that exists only while a session is active (summoned, thinking, speaking or
+    /// presenting), so Esc cancels speech and drawings too, not only the dim. Never a global hotkey.
+    private let sessionEscapeKeyMonitor = EscapeKeyCancelMonitor()
 
     private var wakeWordConsumerTask: Task<Void, Never>?
     private var companionEventConsumerTask: Task<Void, Never>?
@@ -177,6 +180,9 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         currentWalkthroughStepIndex = 1
         lastErrorMessage = nil
         sessionStartedHandler?()
+        sessionEscapeKeyMonitor.start { [weak self] in
+            self?.handleEscapeKeyPressedDuringSession()
+        }
 
         summonTask = Task { [weak self] in
             await self?.runSummon(requestID: requestID, generation: generationAtStart)
@@ -429,6 +435,12 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         finishSession()
     }
 
+    private func handleEscapeKeyPressedDuringSession() {
+        // currentRequestID is set the moment a summon starts, before sessionState leaves idle.
+        guard currentRequestID != nil || sessionState != .idle else { return }
+        cancelCurrentSession()
+    }
+
     /// Esc, or a new summon. Tears down everything a session may have started.
     func cancelCurrentSession() {
         sessionGeneration += 1
@@ -452,6 +464,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         currentRequestWasSentToTransport = false
         activeTransport = nil
         let wasInProgress = sessionState != .idle
+        sessionEscapeKeyMonitor.stop()
         sessionState = .idle
         if wasInProgress { sessionFinishedHandler?() }
     }
@@ -464,6 +477,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         currentRequestID = nil
         currentRequestWasSentToTransport = false
         activeTransport = nil
+        sessionEscapeKeyMonitor.stop()
         sessionState = .idle
         if notifyFinishedHandler { sessionFinishedHandler?() }
     }

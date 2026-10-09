@@ -20,25 +20,67 @@ protocol SummonTriggerProvider: AnyObject {
     func pauseListeningWhileSpeaking(_ isSpeaking: Bool)
 }
 
+/// How forgiving the wake phrase matcher is. Mapped from the 0...1 settings slider.
+enum WakeWordSensitivityLevel: Equatable {
+    /// Exactly "hey clicky".
+    case strict
+    /// Common recognizer spellings (the default).
+    case normal
+    /// Adds more greetings and sound-alike spellings; more false triggers.
+    case loose
+
+    init(sliderValue: Double) {
+        if sliderValue < 1.0 / 3.0 {
+            self = .strict
+        } else if sliderValue < 2.0 / 3.0 {
+            self = .normal
+        } else {
+            self = .loose
+        }
+    }
+}
+
 /// Pure phrase matching on recognizer text, separate for unit testing.
 enum WakeWordPhraseMatcher {
     /// Spellings the recognizer commonly produces for "clicky".
-    private static let clickyVariants: Set<String> = [
+    private static let normalClickyVariants: Set<String> = [
         "clicky", "clickey", "clicky's", "clickie", "cliqui", "klicky", "clikey",
     ]
-    private static let greetingWords: Set<String> = ["hey", "hi", "hay", "a", "hei"]
+    private static let looseOnlyClickyVariants: Set<String> = [
+        "clicki", "cliquey", "clickee", "clikki", "glicky", "clickly", "kliki", "clique",
+    ]
+    private static let normalGreetingWords: Set<String> = ["hey", "hi", "hay", "a", "hei"]
+    private static let looseOnlyGreetingWords: Set<String> = ["hello", "ok", "okay", "yo", "eh"]
 
     /// True when the text contains a greeting word immediately followed by a "clicky" variant.
     /// Requiring the greeting keeps plain talk about "click" or "clicky" from triggering.
-    static func containsWakePhrase(in recognizedText: String) -> Bool {
+    static func containsWakePhrase(
+        in recognizedText: String,
+        sensitivity: WakeWordSensitivityLevel = .normal
+    ) -> Bool {
         let words = recognizedText.lowercased()
             .components(separatedBy: CharacterSet.letters.union(CharacterSet(charactersIn: "'")).inverted)
             .filter { !$0.isEmpty }
         guard words.count >= 2 else { return false }
+
+        let greetingWords: Set<String>
+        let clickyVariants: Set<String>
+        switch sensitivity {
+        case .strict:
+            greetingWords = ["hey"]
+            clickyVariants = ["clicky"]
+        case .normal:
+            greetingWords = normalGreetingWords
+            clickyVariants = normalClickyVariants
+        case .loose:
+            greetingWords = normalGreetingWords.union(looseOnlyGreetingWords)
+            clickyVariants = normalClickyVariants.union(looseOnlyClickyVariants)
+        }
+
         for index in 1..<words.count {
             if greetingWords.contains(words[index - 1]) && clickyVariants.contains(words[index]) { return true }
-            // "click e" / "click ee" split into two words
-            if index >= 2, greetingWords.contains(words[index - 2]), words[index - 1] == "click",
+            // "click e" / "click ee" split into two words (not exact "hey clicky", so not in strict)
+            if sensitivity != .strict, index >= 2, greetingWords.contains(words[index - 2]), words[index - 1] == "click",
                ["e", "ee", "y", "key"].contains(words[index]) { return true }
         }
         return false
@@ -146,7 +188,9 @@ final class WakeWordDetector: NSObject, SummonTriggerProvider {
 
     private func handle(recognizedText: String) {
         guard !hasTriggeredInCurrentSession, !isPausedWhileSpeaking else { return }
-        guard WakeWordPhraseMatcher.containsWakePhrase(in: recognizedText) else { return }
+        let sensitivitySliderValue = UserDefaults.standard.object(forKey: HandsFreeSettingsKeys.wakeWordSensitivity) as? Double ?? 0.5
+        let sensitivity = WakeWordSensitivityLevel(sliderValue: sensitivitySliderValue)
+        guard WakeWordPhraseMatcher.containsWakePhrase(in: recognizedText, sensitivity: sensitivity) else { return }
         guard Date().timeIntervalSince(lastTriggerDate) >= Self.minimumSecondsBetweenTriggers else { return }
 
         lastTriggerDate = Date()
