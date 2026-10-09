@@ -345,6 +345,11 @@ final class CompanionManager: ObservableObject {
         applyWakeWordEnabledSetting()
     }
 
+    /// Runs the hands-free pipeline for text typed in the menu bar panel's "Ask Clicky..." field.
+    func submitTypedRequest(_ typedText: String) {
+        handsFreeSessionCoordinator?.runTypedRequest(text: typedText)
+    }
+
     /// The dim lives in the overlay windows, so they must exist even when "Show Clicky" is off
     /// (the transient cursor mode then fades them out after the session).
     private func showOverlayForHandsFreeSessionIfNeeded() {

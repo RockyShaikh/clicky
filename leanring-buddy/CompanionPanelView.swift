@@ -13,6 +13,8 @@ import SwiftUI
 struct CompanionPanelView: View {
     @ObservedObject var companionManager: CompanionManager
     @State private var emailInput: String = ""
+    @State private var askClickyInput: String = ""
+    @State private var isAskClickySendButtonHovered = false
 
     // Hands-free settings. Keys come from the workstream files that read them (see
     // HandsFreeSessionCoordinator.swift for the ones that live there).
@@ -35,6 +37,12 @@ struct CompanionPanelView: View {
                 .padding(.horizontal, 16)
 
             if companionManager.hasCompletedOnboarding && companionManager.allPermissionsGranted {
+                Spacer()
+                    .frame(height: 12)
+
+                askClickyField
+                    .padding(.horizontal, 16)
+
                 Spacer()
                     .frame(height: 12)
 
@@ -654,6 +662,51 @@ struct CompanionPanelView: View {
         }
         .buttonStyle(.plain)
         .pointerCursor()
+    }
+
+    // MARK: - Ask Clicky (typed prompt)
+
+    /// Return (or the send button) closes this panel first so it is not in the screenshot, then runs
+    /// the hands-free pipeline with the typed text as the utterance.
+    private var askClickyField: some View {
+        let canSend = TypedPromptText.normalizedSubmission(from: askClickyInput) != nil
+
+        return HStack(spacing: 8) {
+            TextField("Ask Clicky…", text: $askClickyInput)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .foregroundColor(DS.Colors.textPrimary)
+                .onSubmit { submitAskClickyInput() }
+
+            Button(action: { submitAskClickyInput() }) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(canSend
+                                     ? (isAskClickySendButtonHovered ? DS.Colors.textPrimary : DS.Colors.accent)
+                                     : DS.Colors.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .disabled(!canSend)
+            .pointerCursor(isEnabled: canSend)
+            .onHover { isHovering in isAskClickySendButtonHovered = isHovering }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: DS.CornerRadius.medium, style: .continuous)
+                .fill(Color.white.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.CornerRadius.medium, style: .continuous)
+                .stroke(DS.Colors.borderSubtle, lineWidth: 0.5)
+        )
+    }
+
+    private func submitAskClickyInput() {
+        guard let typedText = TypedPromptText.normalizedSubmission(from: askClickyInput) else { return }
+        askClickyInput = ""
+        NotificationCenter.default.post(name: .clickyDismissPanel, object: nil)
+        companionManager.submitTypedRequest(typedText)
     }
 
     // MARK: - Hands-Free Settings

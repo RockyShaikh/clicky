@@ -100,7 +100,9 @@ Worker vars: `ELEVENLABS_VOICE_ID`
 | `CaptureDimLayerView.swift` | ~206 | WS1. Per-screen semi-gray dim + status pill (`CaptureDimLayerState`, `CaptureDimLayerView`) and the listen-only Esc monitor active only while dimmed. |
 | `VoiceInputAndSpokenOutputProtocols.swift` | ~30 | WS2. `@MainActor` `VoiceUtteranceProvider` and `SpokenResponseOutput` protocols. |
 | `VoiceInputCoordinator.swift` | ~300 | WS2. `VoiceUtteranceProvider`: shows `VoiceInputPanel`, drives Wispr Flow, waits for end of speech, falls back to Apple Speech (`clicky.voice.inputSource` = `wisprFlow`/`appleSpeech`). |
-| `VoiceInputPanel.swift` | ~155 | WS2. Non-activating, key-capable panel with a text field that Wispr Flow types into. |
+| `VoiceInputPanel.swift` | ~190 | WS2. Non-activating, key-capable panel with a text field that Wispr Flow types into. A local key monitor reports Return (submit) and real keystrokes (typing) via `onKeyAction`. |
+| `TypedPromptSupport.swift` | ~45 | Typed prompts. Pure `SummonPanelKeyClassifier` (Return = submit, Command combos such as Flow's paste are ignored) and `TypedPromptText`. The menu bar "Ask Clicky..." field calls `CompanionManager.submitTypedRequest` -> `HandsFreeSessionCoordinator.runTypedRequest(text:)`. |
+| `scripts/clicky-ask.sh` | ~190 | CLI: captures the screen, POSTs `/v1/ask`, prints the `respond` for its own request id. Terminal-only (the app ignores foreign request ids). |
 | `WisprFlowDriver.swift` | ~103 | WS2. Starts/stops Wispr Flow by sending its configured trigger key chord or mouse button. |
 | `EndOfSpeechDetector.swift` | ~244 | WS2. Mic-level VAD that decides when the user stopped talking; keeps a rolling buffer for the Apple Speech fallback. |
 | `LocalSpokenResponseOutput.swift` | ~113 | WS2. `SpokenResponseOutput` implementations: on-device `AVSpeechSynthesizer` (default in hands-free) and an ElevenLabs wrapper. `speak` returns when speech ends. |

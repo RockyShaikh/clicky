@@ -65,6 +65,13 @@ Mark each: pass / fail / notes. Record failures in `QA-LOG.md`.
 ### Scenario 6: Research into a folder (later)
 - [ ] "Hey Clicky, research X and put notes in a folder." Creates `~/ClickyWorkspace/<slug>/` with notes.
 
+### Typed prompts
+- [ ] **Summon panel:** summon (Control+Option tap), type "what app is this" in the panel, press Return. It submits immediately (no wait for silence), Flow stops, and the answer is spoken/drawn. Log shows `path=typed`.
+- [ ] While typing, stay silent for more than 8 s: the panel does not time out. Esc still cancels everything.
+- [ ] Dictate with Wispr Flow (no typing): behaves as before; Flow's paste is not treated as typing.
+- [ ] **Menu bar field:** open the menu bar panel, type in "Ask Clicky...", press Return (or click the send arrow). The panel closes and does not appear in the capture; the cursor screen is dimmed, then the answer is spoken/drawn. Send button shows a pointer cursor and hover tint; it is disabled when the field is empty.
+- [ ] **CLI:** `scripts/clicky-ask.sh "where is the dock" ` prints `say:` and `shape:` lines and exits 0. The app draws and speaks nothing for it (foreign request id ignored). `--no-screenshot` and `--all-screens` work; the token is never printed; `~/.clicky/shots/*` files are mode 0600. Unit tests: `TypedPromptTests`.
+
 ### Multi-monitor
 - [ ] Two displays: summon with the cursor on display B. Dim and capture apply per design (cursor screen is `screen_index` 1); drawing lands on the right display at the right position.
 - [ ] Mixed Retina and non-Retina displays: shapes line up with the real control (compare to the screenshot).

@@ -179,6 +179,17 @@ final class HandsFreeSessionCoordinator: ObservableObject {
     /// Entry point for both the wake word and the Control+Option tap. A summon during any
     /// non-idle state cancels the current request first (barge-in) and starts over.
     func handleSummon(from summonTriggerSource: SummonTriggerSource) {
+        beginSession(typedUtteranceText: nil)
+    }
+
+    /// Typed entry point (menu bar "Ask Clicky..." field): the same capture -> dim -> brain ->
+    /// annotations + speech pipeline as a summon, with the typed text as the utterance and no listening.
+    func runTypedRequest(text: String) {
+        guard let typedUtteranceText = TypedPromptText.normalizedSubmission(from: text) else { return }
+        beginSession(typedUtteranceText: typedUtteranceText)
+    }
+
+    private func beginSession(typedUtteranceText: String?) {
         let requestID = makeRequestIDForNewSummon()
         cancelCurrentSession()
 
@@ -197,7 +208,7 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         }
 
         summonTask = Task { [weak self] in
-            await self?.runSummon(requestID: requestID, generation: generationAtStart)
+            await self?.runSummon(requestID: requestID, generation: generationAtStart, typedUtteranceText: typedUtteranceText)
         }
     }
 
@@ -215,12 +226,20 @@ final class HandsFreeSessionCoordinator: ObservableObject {
         generation == sessionGeneration && !Task.isCancelled
     }
 
-    private func runSummon(requestID: String, generation: Int) async {
+    /// The menu bar panel is dismissed right before a typed request starts; give the window server a
+    /// moment to remove it so it can never appear in the capture.
+    private let secondsToWaitForMenuBarPanelToDisappear: TimeInterval = 0.25
+
+    private func runSummon(requestID: String, generation: Int, typedUtteranceText: String?) async {
         // Read before our own UI takes focus.
         let frontmostApplication = NSWorkspace.shared.frontmostApplication
 
         do {
             sessionState = .capturing
+            if typedUtteranceText != nil {
+                try await Task.sleep(nanoseconds: UInt64(secondsToWaitForMenuBarPanelToDisappear * 1_000_000_000))
+                guard isCurrent(generation) else { return }
+            }
             ensureOverlayIsVisibleHandler?()
 
             // Capture BEFORE dimming so the dim can never end up in the screenshot.
@@ -236,10 +255,15 @@ final class HandsFreeSessionCoordinator: ObservableObject {
                 )
             }
 
-            sessionState = .listening
-            captureDimLayerState.setPhase(.listening)
-            let utteranceText = try await voiceUtteranceProvider.captureUtterance(onScreen: screenToDim)
-            guard isCurrent(generation) else { return }
+            let utteranceText: String
+            if let typedUtteranceText {
+                utteranceText = typedUtteranceText
+            } else {
+                sessionState = .listening
+                captureDimLayerState.setPhase(.listening)
+                utteranceText = try await voiceUtteranceProvider.captureUtterance(onScreen: screenToDim)
+                guard isCurrent(generation) else { return }
+            }
 
             let trimmedUtteranceText = utteranceText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmedUtteranceText.isEmpty else {
