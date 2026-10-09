@@ -76,6 +76,11 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
     private var earlyEndOfSpeechOutcome: EndOfSpeechOutcome?
     private var endOfSpeechContinuation: CheckedContinuation<EndOfSpeechOutcome?, Never>?
 
+    /// Set by the caller before `captureUtterance` so the latency line carries the request's id (CONTRACTS section 9).
+    var requestIDForLatencyLog: String?
+    /// Receives one fully formatted latency line per finalized utterance. Injected so WS1/lead own the file writer.
+    var latencyLineSink: ((String) -> Void)?
+
     /// The path used by the most recent capture, for logs and tests.
     private(set) var lastTranscriptionPath: VoiceTranscriptionPath?
     /// Seconds from end of speech to returning text, for the most recent capture.
@@ -171,7 +176,18 @@ final class VoiceInputCoordinator: VoiceUtteranceProvider {
         lastTranscriptionPath = path
         lastSpeechEndToSubmitLatencySeconds = latencySeconds
         print("🎙️ Voice: path=\(path.rawValue) speechEndToSubmit=\(String(format: "%.2f", latencySeconds))s chars=\(text.count)")
+        if let requestIDForLatencyLog {
+            latencyLineSink?(Self.makeSpeechEndLatencyLine(requestID: requestIDForLatencyLog, path: path, timestamp: Date()))
+        }
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// `<ISO8601 UTC ms> latency request_id=<id> event=speech_end path=flow|apple`
+    nonisolated static func makeSpeechEndLatencyLine(requestID: String, path: VoiceTranscriptionPath, timestamp: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let pathName = path == .wisprFlow ? "flow" : "apple"
+        return "\(formatter.string(from: timestamp)) latency request_id=\(requestID) event=speech_end path=\(pathName)"
     }
 
     private func waitForEndOfSpeech() async -> EndOfSpeechOutcome? {

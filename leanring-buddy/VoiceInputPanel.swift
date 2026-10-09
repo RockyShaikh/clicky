@@ -102,7 +102,7 @@ final class VoiceInputPanel: NSObject, NSTextFieldDelegate {
     }
 
     /// Places the panel just below-right of the cursor, kept fully inside the screen. Pure so it can be tested.
-    static func panelOrigin(panelSize: NSSize, cursorLocation: CGPoint, screenFrame: CGRect) -> CGPoint {
+    nonisolated static func panelOrigin(panelSize: NSSize, cursorLocation: CGPoint, screenFrame: CGRect) -> CGPoint {
         let edgeMargin: CGFloat = 12
         var originX = cursorLocation.x + 24
         var originY = cursorLocation.y - panelSize.height - 24

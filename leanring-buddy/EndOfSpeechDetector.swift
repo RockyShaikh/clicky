@@ -53,6 +53,8 @@ enum EndOfSpeechOutcome: Equatable {
 /// Pure, hardware-free voice activity state machine so it can be unit tested with synthetic levels.
 struct EndOfSpeechTracker {
     let settings: EndOfSpeechSettings
+    /// Buffer durations are summed as floating point, so 9 x 0.1 s is 0.8999999; compare with a small tolerance.
+    private static let comparisonTolerance: TimeInterval = 0.000_001
     private(set) var totalElapsedSeconds: TimeInterval = 0
     private(set) var accumulatedSpeechSeconds: TimeInterval = 0
     private(set) var trailingSilenceSeconds: TimeInterval = 0
@@ -72,15 +74,15 @@ struct EndOfSpeechTracker {
             trailingSilenceSeconds += bufferDurationSeconds
         }
 
-        let hasHeardEnoughSpeech = accumulatedSpeechSeconds >= settings.requiredSpeechSecondsBeforeSilenceCounts
+        let hasHeardEnoughSpeech = accumulatedSpeechSeconds + Self.comparisonTolerance >= settings.requiredSpeechSecondsBeforeSilenceCounts
 
-        if hasHeardEnoughSpeech && trailingSilenceSeconds >= settings.requiredTrailingSilenceSeconds {
+        if hasHeardEnoughSpeech && trailingSilenceSeconds + Self.comparisonTolerance >= settings.requiredTrailingSilenceSeconds {
             return .endOfSpeech
         }
-        if hasHeardEnoughSpeech && totalElapsedSeconds >= settings.maximumUtteranceSeconds {
+        if hasHeardEnoughSpeech && totalElapsedSeconds + Self.comparisonTolerance >= settings.maximumUtteranceSeconds {
             return .reachedMaximumUtteranceLength
         }
-        if !hasHeardEnoughSpeech && totalElapsedSeconds >= settings.noSpeechTimeoutSeconds {
+        if !hasHeardEnoughSpeech && totalElapsedSeconds + Self.comparisonTolerance >= settings.noSpeechTimeoutSeconds {
             return .noSpeechHeard
         }
         return nil
