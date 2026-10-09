@@ -11,16 +11,7 @@ import Foundation
 
 // MARK: - Request models
 
-struct CapturedScreenForRequest: Codable, Equatable {
-    let screenIndex: Int
-    let imageFileURL: URL
-    let imageWidthInPixels: Int
-    let imageHeightInPixels: Int
-    /// NSScreen.frame (AppKit bottom-left origin, global points).
-    let displayFrameInAppKitGlobalPoints: CGRect
-    let isCursorScreen: Bool
-    let label: String
-}
+// CapturedScreenForRequest is defined in RequestScreenCaptureService.swift (WS1).
 
 enum CompanionRequestMode: String, Codable {
     case auto

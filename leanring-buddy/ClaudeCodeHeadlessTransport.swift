@@ -78,7 +78,7 @@ final class ClaudeCodeHeadlessTransport: BrainTransport, @unchecked Sendable {
         guard let claudeExecutableURL = Self.locateClaudeExecutable() else {
             throw BrainTransportError.notAvailable("claude executable not found")
         }
-        BridgeLatencyLog.record(requestID: request.requestID, eventName: "submit", extraFields: "transport=headless")
+        ClickyLatencyLog.record(requestID: request.requestID, event: "submit", extraFields: ["transport": "headless"])
         // Fire and forget: results arrive on companionEvents, like the channel transport.
         Task.detached { [self] in
             await runClaude(for: request, claudeExecutableURL: claudeExecutableURL)
@@ -153,8 +153,8 @@ final class ClaudeCodeHeadlessTransport: BrainTransport, @unchecked Sendable {
                     try? newSessionID.write(to: ClickyRuntimePaths.headlessSessionFileURL, atomically: true, encoding: .utf8)
                 }
                 if isCancelled(request.requestID) { return }
-                BridgeLatencyLog.record(requestID: request.requestID, eventName: "first_event", extraFields: "transport=headless")
-                BridgeLatencyLog.record(requestID: request.requestID, eventName: "respond", extraFields: "transport=headless")
+                ClickyLatencyLog.record(requestID: request.requestID, event: "first_event", extraFields: ["transport": "headless"])
+                ClickyLatencyLog.record(requestID: request.requestID, event: "respond", extraFields: ["transport": "headless"])
                 companionEventsContinuation.yield(.respond(parsedOutput.response))
                 return
             } catch {

@@ -93,7 +93,7 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
         requestIDsAwaitingFirstEvent.insert(request.requestID)
         stateLock.unlock()
         try await postJSON(path: "/v1/ask", body: try request.bridgeWireJSONData())
-        BridgeLatencyLog.record(requestID: request.requestID, eventName: "submit")
+        ClickyLatencyLog.record(requestID: request.requestID, event: "submit")
     }
 
     func sendFollowUp(_ followUp: CompanionFollowUp) async throws {
@@ -173,8 +173,8 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
         stateLock.lock()
         let isFirstEvent = requestIDsAwaitingFirstEvent.remove(requestID) != nil
         stateLock.unlock()
-        if isFirstEvent { BridgeLatencyLog.record(requestID: requestID, eventName: "first_event") }
-        if isRespond { BridgeLatencyLog.record(requestID: requestID, eventName: "respond") }
+        if isFirstEvent { ClickyLatencyLog.record(requestID: requestID, event: "first_event") }
+        if isRespond { ClickyLatencyLog.record(requestID: requestID, event: "respond") }
     }
 
     private func ensureEventStreamIsRunning() {
