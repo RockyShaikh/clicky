@@ -1,0 +1,13 @@
+{
+  "request_id": "r_fixture0002",
+  "say": "That is the share button.",
+  "screen_index": 1,
+  "image_width_px": 1280,
+  "image_height_px": 831,
+  "shapes": [
+    { "kind": "box", "x": 1180, "y": 30, "x2": 1230, "y2": 60, "snap": true, "emphasis": "primary", "label": "Share" },
+    { "kind": "circle", "x": 1100, "y": 45, "r": 24, "snap": true }
+  ],
+  "expect_click": false,
+  "final": true
+}
