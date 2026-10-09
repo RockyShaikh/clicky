@@ -50,6 +50,8 @@ final class CompanionAppDelegate: NSObject, NSApplicationDelegate {
             menuBarPanelManager?.showPanelOnLaunch()
         }
         registerAsLoginItemIfNeeded()
+        // Sparkle stays disabled in this fork: SUFeedURL in Info.plist points at
+        // upstream's appcast, so enabling it would pull someone else's updates.
         // startSparkleUpdater()
     }
 
