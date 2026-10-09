@@ -106,6 +106,10 @@ struct BlueCursorView: View {
     let screenFrame: CGRect
     let isFirstAppearance: Bool
     @ObservedObject var companionManager: CompanionManager
+    /// Shared dim state (CONTRACTS section 7); this view only draws it when this screen is the summoned one.
+    @ObservedObject private var captureDimLayerState: CaptureDimLayerState
+    /// Annotation shapes for THIS screen only.
+    @ObservedObject private var annotationLayerState: AnnotationLayerState
 
     @State private var cursorPosition: CGPoint
     @State private var isCursorOnThisScreen: Bool
@@ -114,6 +118,10 @@ struct BlueCursorView: View {
         self.screenFrame = screenFrame
         self.isFirstAppearance = isFirstAppearance
         self.companionManager = companionManager
+        _captureDimLayerState = ObservedObject(wrappedValue: companionManager.captureDimLayerState)
+        _annotationLayerState = ObservedObject(
+            wrappedValue: companionManager.annotationLayerState(forScreenFrame: screenFrame)
+        )
 
         // Seed the cursor position from the current mouse location so the
         // buddy doesn't flash at (0,0) before onAppear fires.
@@ -185,6 +193,10 @@ struct BlueCursorView: View {
         ZStack {
             // Nearly transparent background (helps with compositing)
             Color.black.opacity(0.001)
+
+            // Layer order (CONTRACTS section 7): dim lowest, annotations above it, blue cursor above both.
+            CaptureDimLayerView(state: captureDimLayerState, screenFrame: screenFrame)
+            AnnotationLayerView(state: annotationLayerState)
 
             // Welcome speech bubble (first launch only)
             if isCursorOnThisScreen && showWelcome && !welcomeText.isEmpty {
@@ -367,6 +379,13 @@ struct BlueCursorView: View {
             timer?.invalidate()
             navigationAnimationTimer?.invalidate()
             companionManager.tearDownOnboardingVideo()
+        }
+        .onChange(of: annotationLayerState.primaryShapeCursorTargetInAppKitGlobalPoints) { primaryShapeCursorTarget in
+            // A "primary" annotation shape sends the blue cursor flying to it, through the same
+            // path the legacy [POINT] tag uses (the handler below does the actual navigation).
+            guard let primaryShapeCursorTarget else { return }
+            companionManager.detectedElementDisplayFrame = screenFrame
+            companionManager.detectedElementScreenLocation = primaryShapeCursorTarget
         }
         .onChange(of: companionManager.detectedElementScreenLocation) { newLocation in
             // When a UI element location is detected, navigate the buddy to
