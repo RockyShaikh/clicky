@@ -1,7 +1,8 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { resolve, sep } from "node:path";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { dirname, join, resolve, sep } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { BridgeState, logLine, shotsDirectory } from "./state.js";
+import { BridgeState, logLatency, logLine, shotsDirectory } from "./state.js";
 
 // ---- Shapes (CONTRACTS §5) ----
 
@@ -78,12 +79,39 @@ function textResult(text: string, isError = false): ToolResult {
   return { content: [{ type: "text", text }], ...(isError ? { isError: true } : {}) };
 }
 
-/** True when `candidatePath` resolves (symlinks included) to a file inside ~/.clicky/shots/. */
+/** Finds the repo's test-fixtures/ dir by walking up from this file (works from dist/ and dist-test/). */
+function repoTestFixturesDirectory(): string | null {
+  let directory = dirname(fileURLToPath(import.meta.url));
+  for (let level = 0; level < 6; level++) {
+    const candidate = join(directory, "test-fixtures");
+    if (existsSync(candidate)) return candidate;
+    directory = dirname(directory);
+  }
+  return null;
+}
+
+/** Directories `look` may read from: ~/.clicky/shots, repo test-fixtures, and CLICKY_EXTRA_IMAGE_DIRS (colon-separated). */
+export function allowedImageDirectories(): string[] {
+  const directories = [shotsDirectory()];
+  const fixturesDirectory = repoTestFixturesDirectory();
+  if (fixturesDirectory) directories.push(fixturesDirectory);
+  for (const extraDirectory of (process.env.CLICKY_EXTRA_IMAGE_DIRS ?? "").split(":")) {
+    if (extraDirectory.trim()) directories.push(extraDirectory.trim());
+  }
+  return directories;
+}
+
+/** True when `candidatePath` resolves (symlinks included) to a file inside an allowed image directory. */
 export function isInsideShotsDirectory(candidatePath: string): boolean {
   try {
-    const shotsRoot = realpathSync(shotsDirectory());
     const resolvedCandidate = realpathSync(resolve(candidatePath));
-    return resolvedCandidate.startsWith(shotsRoot + sep);
+    return allowedImageDirectories().some((allowedDirectory) => {
+      try {
+        return resolvedCandidate.startsWith(realpathSync(allowedDirectory) + sep);
+      } catch {
+        return false;
+      }
+    });
   } catch {
     return false;
   }
@@ -103,7 +131,7 @@ export function handleLook(state: BridgeState, input: { request_id: string; scre
   }
   if (!isInsideShotsDirectory(screen.image_path)) {
     logLine(`look refused path outside shots dir: ${screen.image_path}`);
-    return textResult("refused: image is not inside ~/.clicky/shots/", true);
+    return textResult("refused: image is not inside an allowed image directory (~/.clicky/shots/)", true);
   }
   let imageBytes: Buffer;
   try {
@@ -138,6 +166,7 @@ export function handleRespond(state: BridgeState, input: z.infer<z.ZodObject<typ
   if (!trackedRequest.firstRespondLatencyLogged) {
     trackedRequest.firstRespondLatencyLogged = true;
     logLine(`first respond for ${input.request_id} after ${Date.now() - trackedRequest.createdAtMilliseconds} ms`);
+    logLatency(input.request_id, "bridge_respond", `since_ask_ms=${Date.now() - trackedRequest.createdAtMilliseconds}`);
   }
   const screenIndex = input.screen_index ?? trackedRequest.screens.find((screen) => screen.is_cursor_screen)?.screen_index ?? 1;
   const isFinal = input.final ?? true;

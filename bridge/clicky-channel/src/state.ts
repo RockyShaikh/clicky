@@ -57,6 +57,18 @@ export function writeBridgeInfoFile(port: number): void {
   writeFileSync(join(clickyHomeDirectory(), "bridge.json"), JSON.stringify(info) + "\n", { mode: 0o600 });
 }
 
+/** Latency line per docs/fork/TESTING.md: ~/.clicky/logs/bridge-YYYY-MM-DD.log */
+export function logLatency(requestID: string, eventName: string, extra = ""): void {
+  try {
+    const now = new Date();
+    mkdirSync(join(clickyHomeDirectory(), "logs"), { recursive: true });
+    const line = `${now.toISOString()} latency request_id=${requestID} event=${eventName}${extra ? " " + extra : ""}\n`;
+    appendFileSync(join(clickyHomeDirectory(), "logs", `bridge-${now.toISOString().slice(0, 10)}.log`), line);
+  } catch {
+    // never fatal
+  }
+}
+
 export interface ScreenInfo {
   screen_index: number;
   image_path: string;

@@ -52,6 +52,7 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
 
     private let stateLock = NSLock()
     private var eventStreamTask: Task<Void, Never>?
+    private var requestIDsAwaitingFirstEvent = Set<String>()
 
     private let regularRequestSession: URLSession
     private let eventStreamSession: URLSession
@@ -88,7 +89,11 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
 
     func sendRequest(_ request: CompanionRequest) async throws {
         ensureEventStreamIsRunning()
+        stateLock.lock()
+        requestIDsAwaitingFirstEvent.insert(request.requestID)
+        stateLock.unlock()
         try await postJSON(path: "/v1/ask", body: try request.bridgeWireJSONData())
+        BridgeLatencyLog.record(requestID: request.requestID, eventName: "submit")
     }
 
     func sendFollowUp(_ followUp: CompanionFollowUp) async throws {
@@ -153,6 +158,25 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
 
     // MARK: SSE
 
+    private func recordLatencyForReceivedEvent(_ companionEvent: CompanionEvent) {
+        let eventRequestID: String?
+        var isRespond = false
+        switch companionEvent {
+        case .status(let requestID, _): eventRequestID = requestID
+        case .confirm(let requestID, _): eventRequestID = requestID
+        case .error(let requestID, _): eventRequestID = requestID
+        case .respond(let response):
+            eventRequestID = response.requestID
+            isRespond = true
+        }
+        guard let requestID = eventRequestID else { return }
+        stateLock.lock()
+        let isFirstEvent = requestIDsAwaitingFirstEvent.remove(requestID) != nil
+        stateLock.unlock()
+        if isFirstEvent { BridgeLatencyLog.record(requestID: requestID, eventName: "first_event") }
+        if isRespond { BridgeLatencyLog.record(requestID: requestID, eventName: "respond") }
+    }
+
     private func ensureEventStreamIsRunning() {
         stateLock.lock()
         defer { stateLock.unlock() }
@@ -182,6 +206,7 @@ final class ClaudeCodeChannelTransport: BrainTransport, @unchecked Sendable {
                         for serverSentEvent in parser.consume(pendingChunk) {
                             if serverSentEvent.eventName == "hello" { consecutiveFailureCount = 0 }
                             if let companionEvent = CompanionEvent.fromServerSentEvent(serverSentEvent) {
+                                recordLatencyForReceivedEvent(companionEvent)
                                 companionEventsContinuation.yield(companionEvent)
                             }
                         }

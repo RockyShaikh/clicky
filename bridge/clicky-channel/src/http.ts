@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import { z } from "zod";
-import { BRIDGE_VERSION, BridgeState, logLine } from "./state.js";
+import { BRIDGE_VERSION, BridgeState, logLatency, logLine } from "./state.js";
 
 const MAXIMUM_BODY_BYTES = 1024 * 1024;
 const HEARTBEAT_INTERVAL_MILLISECONDS = 15_000;
@@ -174,8 +174,10 @@ export function createBridgeHttpServer(options: {
           state.registerAsk(ask.request_id, ask.screens);
           const channelEvent = buildAskChannelEvent(ask);
           logLine(`ask ${ask.request_id} mode=${ask.mode} screens=${ask.screens.length} registered=${state.channelRegistered}`);
+          logLatency(ask.request_id, "bridge_ask_received");
           try {
             await notifyChannel(channelEvent.content, channelEvent.meta);
+            logLatency(ask.request_id, "bridge_notified");
           } catch (error) {
             logLine(`notify failed: ${(error as Error).message}`);
             state.broadcast("error", { request_id: ask.request_id, message: "channel notification failed" });

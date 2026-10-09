@@ -45,6 +45,21 @@ describe("tools", () => {
     assert.equal(handleLook(state, { request_id: "r_zzzzzzzzzz" }).isError, true);
   });
 
+  test("image guard accepts repo test-fixtures and CLICKY_EXTRA_IMAGE_DIRS, refuses others", () => {
+    const state = new BridgeState();
+    const fixturePath = join(process.cwd(), "..", "..", "test-fixtures", "screens", "xcode-run.png");
+    state.registerAsk("r_ffffffffff", [{ ...screen, image_path: fixturePath }]);
+    assert.equal(handleLook(state, { request_id: "r_ffffffffff" }).isError, undefined);
+    const extraDirectory = mkdtempSync(join(tmpdir(), "clicky-extra-"));
+    writeFileSync(join(extraDirectory, "a.jpg"), "x");
+    state.registerAsk("r_gggggggggg", [{ ...screen, image_path: join(extraDirectory, "a.jpg") }]);
+    assert.equal(handleLook(state, { request_id: "r_gggggggggg" }).isError, true);
+    process.env.CLICKY_EXTRA_IMAGE_DIRS = extraDirectory;
+    assert.equal(handleLook(state, { request_id: "r_gggggggggg" }).isError, undefined);
+    delete process.env.CLICKY_EXTRA_IMAGE_DIRS;
+    assert.equal(handleLook(state, { request_id: "r_gggggggggg" }).isError, true);
+  });
+
   test("newest ask supersedes older; respond to superseded is rejected and not broadcast", () => {
     const state = new BridgeState();
     state.registerAsk("r_aaaaaaaaaa", [screen]);
