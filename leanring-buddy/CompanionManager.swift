@@ -160,14 +160,8 @@ final class CompanionManager: ObservableObject {
         // Identify user in PostHog
         ClickyAnalytics.identifyUser(email: trimmedEmail)
 
-        // Submit to FormSpark
-        Task {
-            var request = URLRequest(url: URL(string: "https://submit-form.com/RWbGJxmIs")!)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try? JSONSerialization.data(withJSONObject: ["email": trimmedEmail])
-            _ = try? await URLSession.shared.data(for: request)
-        }
+        // Upstream POSTed the email to its own FormSpark form here. This fork
+        // removes that so the user's email is never sent to upstream's project.
     }
 
     func start() {
