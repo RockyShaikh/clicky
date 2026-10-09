@@ -126,6 +126,7 @@ final class SummonKeyboardShortcutMonitor {
                 modifierFlags: modifierFlags, timestampInSeconds: timestampInSeconds
             ) {
                 SummonLatencySignposter.event("summon_trigger", detail: "keyboardShortcut")
+                ClickyLatencyLog.recordWake(triggerDescription: "keyboardShortcut")
                 onSummonTapDetected?()
             }
         default:
