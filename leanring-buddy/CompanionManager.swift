@@ -70,6 +70,7 @@ final class CompanionManager: ObservableObject {
 
     /// Shared by every screen's BlueCursorView; only the summoned screen draws the dim.
     let captureDimLayerState = CaptureDimLayerState()
+    let doModeStatusState = DoModeStatusState()
     let wakeWordDetector = WakeWordDetector()
     let summonKeyboardShortcutMonitor = SummonKeyboardShortcutMonitor()
     private(set) var handsFreeSessionCoordinator: HandsFreeSessionCoordinator?
@@ -334,6 +335,7 @@ final class CompanionManager: ObservableObject {
             self?.lastTranscript = transcript
             self?.sendTranscriptToClaudeWithScreenshot(transcript: transcript)
         }
+        handsFreeSessionCoordinator.doModeStatusState = doModeStatusState
         handsFreeSessionCoordinator.start()
         self.handsFreeSessionCoordinator = handsFreeSessionCoordinator
 

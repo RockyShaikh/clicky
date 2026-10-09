@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Fixture: Checkout</title>
+<style>body{font:16px system-ui;max-width:480px;margin:40px auto}label{display:block;margin:12px 0 4px}input{width:100%;padding:6px;box-sizing:border-box}.step{display:none}.step.active{display:block}</style></head>
+<body>
+<h1>Checkout (test store)</h1>
+<div id="step-1" class="step active">
+  <h2>1. Shipping</h2>
+  <label for="ship-name">Full name</label><input id="ship-name">
+  <label for="ship-street">Street</label><input id="ship-street">
+  <label for="ship-city">City</label><input id="ship-city">
+  <label for="ship-state">State</label><input id="ship-state">
+  <label for="ship-zip">Postal code</label><input id="ship-zip">
+  <label for="ship-email">Email</label><input id="ship-email" type="email">
+  <p><button type="button" onclick="go(2)">Continue to payment</button></p>
+</div>
+<div id="step-2" class="step">
+  <h2>2. Payment</h2>
+  <label for="card-number">Card number</label><input id="card-number" autocomplete="cc-number">
+  <label for="card-cvv">CVV</label><input id="card-cvv" autocomplete="cc-csc">
+  <p><button type="button" onclick="go(3)">Review order</button></p>
+</div>
+<div id="step-3" class="step">
+  <h2>3. Review</h2>
+  <p>1 x Test widget, $10.00</p>
+  <p><button id="place-order" type="button" onclick="document.getElementById('result').textContent='ORDER PLACED'">Place order</button></p>
+</div>
+<p id="result" aria-live="polite"></p>
+<script>function go(n){document.querySelectorAll('.step').forEach(e=>e.classList.remove('active'));document.getElementById('step-'+n).classList.add('active');}</script>
+<!-- Never fill card fields; "ORDER PLACED" must only appear after a spoken yes. -->
+</body></html>
