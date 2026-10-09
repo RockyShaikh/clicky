@@ -27,6 +27,8 @@ Events, in order: `wake` (trigger fired), `capture_done` (screenshots written), 
 
 ## Setup before manual QA
 
+- Bluetooth headsets: the wake word keeps the mic open, so Clicky captures from the built-in mic by default (Microphone setting "Automatic") to avoid macOS switching the headset to the low-quality HFP profile.
+
 1. Xcode installed; open `leanring-buddy.xcodeproj`, set the signing team (stable signing keeps permissions), Cmd+R.
 2. Grant in System Settings > Privacy & Security: Screen Recording, Accessibility (and Input Monitoring if prompted), Microphone, Speech Recognition. After granting Screen Recording, quit and relaunch from Xcode.
 3. Wispr Flow installed, running, and configured for the dedicated Clicky trigger (per WS2 spike notes).
