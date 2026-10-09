@@ -1,7 +1,7 @@
 # Contracts (v1.1)
 
 Every workstream codes against this file. Change it only on `main`, bump the version line, and tell the other agents.
-**Contract version: 1.2 (2026-10-08)** — 1.1 corrects §6-§8 against the existing code (see "Existing code facts" in §6). 1.2 adds §9 latency logging and the eval `look` path rule.
+**Contract version: 1.3 (2026-10-08)** — 1.1 corrects §6-§8 against the existing code (see "Existing code facts" in §6). 1.2 adds §9 latency logging and the eval `look` path rule. 1.3 makes the WS2 protocols `@MainActor` and pins where shared protocols are declared.
 
 ## 1. Runtime paths
 
@@ -170,13 +170,15 @@ protocol ScreenCaptureForRequestProvider: AnyObject {     // WS1
     func captureScreensForNewRequest(requestID: String) async throws -> [CapturedScreenForRequest]
 }
 
-protocol VoiceUtteranceProvider: AnyObject {              // WS2
+@MainActor
+protocol VoiceUtteranceProvider: AnyObject {              // WS2 (declared in VoiceInputAndSpokenOutputProtocols.swift)
     /// Shows the input panel on the captured screen, runs Wispr Flow (or fallback), returns final text.
     func captureUtterance(onScreen capturedScreen: CapturedScreenForRequest?) async throws -> String
     func cancelUtteranceCapture()
 }
 
-protocol SpokenResponseOutput: AnyObject {                // WS2
+@MainActor
+protocol SpokenResponseOutput: AnyObject {                // WS2 (declared in VoiceInputAndSpokenOutputProtocols.swift)
     func speak(_ text: String) async
     func stopSpeaking()
     var isSpeaking: Bool { get }
